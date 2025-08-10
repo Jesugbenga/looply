@@ -1,15 +1,15 @@
 import React from 'react';
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { Provider } from 'react-redux';
 import { store } from '@/store';
-import HomeScreen from '@/screens/HomeScreen';
+import MapScreen from '@/screens/MapScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function Home() {
+export default function Map() {
   return (
     <Provider store={store}>
       <SafeAreaView style={styles.container}>
-        <HomeScreen />
+        <MapScreen />
       </SafeAreaView>
     </Provider>
   );
