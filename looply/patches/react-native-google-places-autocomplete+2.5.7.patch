@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js b/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
+index 60836de..966d5eb 100644
+--- a/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
++++ b/node_modules/react-native-google-places-autocomplete/GooglePlacesAutocomplete.js
+@@ -2,7 +2,7 @@
+ import debounce from 'lodash.debounce';
+ import PropTypes from 'prop-types';
+ import Qs from 'qs';
+-import { v4 as uuidv4 } from 'uuid';
++import { v4 as uuid } from 'uuid';
+ import React, {
+   forwardRef,
+   useMemo,
