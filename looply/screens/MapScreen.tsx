@@ -8,7 +8,7 @@ const MapScreen = () => {
   return (
     <View style={styles.container}>
       <View style={tw`h-1/2`}>
-        <MapLogic />
+        {/* <MapLogic /> */}
       </View>
 
       <View style={tw`h-1/2`}>
