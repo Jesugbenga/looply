@@ -28,14 +28,13 @@ export const navSlice = createSlice({
 export const { setOrigin, setDestination, setTravelTimeInformation } = navSlice.actions;
 
 // Selector to get the origin from the state
-interface RootState {
-  nav: typeof initialState;
-}
- 
-export const selectOrigin = (state: RootState) => state.nav.origin;
+// Use a local NavState type to avoid circular import with the centralized store
+export type NavState = typeof initialState;
+
+export const selectOrigin = (state: { nav: NavState }) => state.nav.origin;
 // Selector to get the destination from the state
-export const selectDestination = (state: RootState) => state.nav.destination;
+export const selectDestination = (state: { nav: NavState }) => state.nav.destination;
 // Selector to get the travel time information from the state
-export const selectTravelTimeInformation = (state: RootState) => state.nav.travelTimeInformation;
+export const selectTravelTimeInformation = (state: { nav: NavState }) => state.nav.travelTimeInformation;
 
 export default navSlice.reducer;

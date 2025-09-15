@@ -2,8 +2,22 @@ import React from "react";
 import { StyleSheet, View, Text, SafeAreaView, TouchableOpacity, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'expo-router';
 
 export default function RiderProfileScreen() {
+  const { user, userProfile, logout } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.replace('/(auth)/sign-in');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -13,10 +27,14 @@ export default function RiderProfileScreen() {
             source={{ uri: "https://i.pravatar.cc/150?img=1" }}
             style={styles.profileImage}
           />
-          <Text style={styles.name}>Jesugbenga O.</Text>
+          <Text style={styles.name}>
+            {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.displayName || 'User'}
+          </Text>
           <View style={styles.statusContainer}>
             <View style={styles.statusDot} />
-            <Text style={styles.statusText}>Active Rider</Text>
+            <Text style={styles.statusText}>
+              {userProfile?.userType === 'driver' ? 'Active Driver' : 'Active Rider'}
+            </Text>
           </View>
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={16} color="#FFD700" />
@@ -98,7 +116,7 @@ export default function RiderProfileScreen() {
         </View>
 
         {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutCard}>
+        <TouchableOpacity style={styles.signOutCard} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={22} color="#EF4444" />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>

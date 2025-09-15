@@ -1,8 +1,2 @@
-import { configureStore } from '@reduxjs/toolkit'
-import navReducer from './slices/navSlice';
-
-export const store = configureStore({
-  reducer: {
-    nav: navReducer,
-  },
-})
+export { store, RootState, AppDispatch, useAppDispatch, useAppSelector } from './store/index';
+export { default as useAuth } from './store/useAuth';
