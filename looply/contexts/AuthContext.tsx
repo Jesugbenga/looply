@@ -16,6 +16,8 @@ interface UserProfile {
   firstName: string;
   lastName: string;
   userType: 'rider' | 'driver';
+  savedAddresses: any[];
+  isDriverAvailable: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,45 +49,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Create user profile in Firestore
   const createUserProfile = async (user: User, firstName: string, lastName: string, userType: 'rider' | 'driver') => {
-    const userProfile: UserProfile = {
-      uid: user.uid,
-      email: user.email!,
-      firstName,
-      lastName,
-      userType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const userProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email!,
+        firstName,
+        lastName,
+        userType,
+        savedAddresses: [],
+        isDriverAvailable: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    await setDoc(doc(db, 'users', user.uid), userProfile);
-    return userProfile;
+      console.log('📝 Creating user profile:', userProfile);
+      await setDoc(doc(db, 'users', user.uid), userProfile);
+      console.log('✅ User profile created successfully in Firestore');
+      
+      return userProfile;
+    } catch (error) {
+      console.error('❌ Error creating user profile:', error);
+      throw new Error(`Failed to create user profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Fetch user profile from Firestore
   const fetchUserProfile = async (uid: string) => {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
-      return userDoc.data() as UserProfile;
+    try {
+      console.log('🔍 Fetching user profile for UID:', uid);
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      
+      if (userDoc.exists()) {
+        const userProfile = userDoc.data() as UserProfile;
+        console.log('✅ User profile found:', userProfile);
+        return userProfile;
+      } else {
+        console.log('❌ User profile not found in Firestore');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching user profile:', error);
+      throw new Error(`Failed to fetch user profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    return null;
   };
 
   // Sign up function
   const signUp = async (email: string, password: string, firstName: string, lastName: string, userType: 'rider' | 'driver') => {
     try {
+      console.log('🚀 Starting user sign-up process...');
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log('✅ User created in Firebase Auth:', user.uid);
 
       // Update Firebase Auth profile
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`,
       });
+      console.log('✅ User profile updated in Firebase Auth');
 
       // Create user profile in Firestore
+      console.log('📝 Creating user profile in Firestore...');
       const userProfile = await createUserProfile(user, firstName, lastName, userType);
+      console.log('✅ User profile created in Firestore:', userProfile);
+      
       setUserProfile(userProfile);
+      console.log('🎉 Sign-up completed successfully!');
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('❌ Sign up error:', error);
       throw error;
     }
   };
@@ -93,9 +124,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      console.log('🔐 Starting user sign-in process...');
+      
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log('✅ User signed in to Firebase Auth:', user.uid);
+
+      // Verify user profile exists in Firestore
+      console.log('🔍 Checking user profile in Firestore...');
+      let userProfile = await fetchUserProfile(user.uid);
+      
+      if (!userProfile) {
+        console.log('⚠️ User profile not found in Firestore, creating one...');
+        // Create a basic profile if it doesn't exist (for existing users)
+        userProfile = await createUserProfile(user, 'User', 'Name', 'rider');
+        console.log('✅ User profile created in Firestore:', userProfile);
+      } else {
+        console.log('✅ User profile found in Firestore:', userProfile);
+      }
+      
+      setUserProfile(userProfile);
+      console.log('🎉 Sign-in completed successfully!');
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('❌ Sign in error:', error);
       throw error;
     }
   };

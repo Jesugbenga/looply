@@ -44,13 +44,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
         }}
       />
-      {/* <Tabs.Screen
-        name="messages"
+      <Tabs.Screen
+        name="activity"
         options={{
-          title: 'Messages',
-          tabBarIcon: ({ color }) => <Ionicons name="chatbubble-outline" size={24} color={color} />,
+          title: 'Activity',
+          tabBarIcon: ({ color }) => <Ionicons name="time-outline" size={24} color={color} />,
         }}
-      /> */}
+      />
       <Tabs.Screen
         name="profile"
         options={{

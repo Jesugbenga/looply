@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import React, { useEffect } from 'react';
 import { loadStoredAuth } from '@/store/authSlice';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { RefreshProvider } from '@/contexts/RefreshContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function RootLayout() {
@@ -29,12 +30,14 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Provider store={store}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Slot />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </Provider>
+      <RefreshProvider>
+        <Provider store={store}>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Slot />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </Provider>
+      </RefreshProvider>
     </AuthProvider>
   );
 }

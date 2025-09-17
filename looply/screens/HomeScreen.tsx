@@ -1,303 +1,389 @@
-import React from "react";
-import { StyleSheet, View, Text, SafeAreaView, TouchableOpacity, ScrollView } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { StyleSheet, View, Text, SafeAreaView } from "react-native";
+import { useAuth } from '@/contexts/AuthContext';
+import RiderHome from '@/components/ride/RiderHome';
+import DriverHome from '@/components/ride/DriverHome';
 
 const HomeScreen = () => {
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good morning 👋</Text>
-            <Text style={styles.username}>Jesugbenga</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#4B5563" />
-          </TouchableOpacity>
+  const { user, userProfile } = useAuth();
+
+  // If no user, render a placeholder
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.placeholderContainer}>
+          <Text style={styles.placeholderText}>Please sign in to book rides</Text>
         </View>
+      </SafeAreaView>
+    );
+  }
 
-        {/* Search Bar */}
-        <TouchableOpacity style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
-          <Text style={styles.searchText}>Where would you like to go?</Text>
-        </TouchableOpacity>
+  // Driver view
+  if (userProfile?.userType === 'driver') {
+    return <DriverHome />;
+  }
 
-        {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickActionIcon, { backgroundColor: '#EBF8FF' }]}>
-              <Ionicons name="car-outline" size={24} color="#2563EB" />
-            </View>
-            <Text style={styles.quickActionText}>Ride</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickActionIcon, { backgroundColor: '#F0FDF4' }]}>
-              <Ionicons name="bicycle-outline" size={24} color="#16A34A" />
-            </View>
-            <Text style={styles.quickActionText}>Bike</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
-              <Ionicons name="fast-food-outline" size={24} color="#D97706" />
-            </View>
-            <Text style={styles.quickActionText}>Food</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickActionIcon, { backgroundColor: '#FDF2F8' }]}>
-              <Ionicons name="gift-outline" size={24} color="#DB2777" />
-            </View>
-            <Text style={styles.quickActionText}>Package</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Trips */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent trips</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See all</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.card}>
-            <TouchableOpacity style={styles.tripItem}>
-              <View style={styles.locationIcon}>
-                <Ionicons name="location-outline" size={20} color="#6B7280" />
-              </View>
-              <View style={styles.tripDetails}>
-                <Text style={styles.tripDestination}>West Edmonton Mall</Text>
-                <Text style={styles.tripAddress}>8882 170 St NW, Edmonton, AB</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tripItem}>
-              <View style={styles.locationIcon}>
-                <Ionicons name="location-outline" size={20} color="#6B7280" />
-              </View>
-              <View style={styles.tripDetails}>
-                <Text style={styles.tripDestination}>University of Alberta</Text>
-                <Text style={styles.tripAddress}>116 St & 85 Ave, Edmonton, AB</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tripItem}>
-              <View style={styles.locationIcon}>
-                <Ionicons name="location-outline" size={20} color="#6B7280" />
-              </View>
-              <View style={styles.tripDetails}>
-                <Text style={styles.tripDestination}>Downtown Core</Text>
-                <Text style={styles.tripAddress}>Jasper Ave, Edmonton, AB</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Saved Places */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Saved places</Text>
-          </View>
-            
-          <View style={styles.card}>
-            <TouchableOpacity style={styles.savedPlace}>
-              <View style={[styles.savedPlaceIcon, { backgroundColor: '#EBF8FF' }]}>
-                <Ionicons name="home-outline" size={20} color="#2563EB" />
-              </View>
-              <View style={styles.savedPlaceDetails}>
-                <Text style={styles.savedPlaceTitle}>Home</Text>
-                <Text style={styles.savedPlaceAddress}>Add your home address</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.savedPlace}>
-              <View style={[styles.savedPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
-                <Ionicons name="business-outline" size={20} color="#16A34A" />
-              </View>
-              <View style={styles.savedPlaceDetails}>
-                <Text style={styles.savedPlaceTitle}>Work</Text>
-                <Text style={styles.savedPlaceAddress}>Add your work address</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-    </SafeAreaView>
-  );
+  // Rider view
+  return <RiderHome />;
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#6B7280',
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingVertical: 20,
   },
   greeting: {
     fontSize: 16,
-    color: "#6B7280",
+    color: '#6B7280',
     marginBottom: 4,
   },
   username: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
+    fontWeight: '700',
+    color: '#111827',
   },
   notificationButton: {
     padding: 8,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#000",
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
+  statusCard: {
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: "#000",
+    marginBottom: 20,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  searchText: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    marginLeft: 12,
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statusTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginLeft: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+  },
+  bookRideButton: {
+    backgroundColor: '#3B82F6',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 12,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  bookRideContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bookRideText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginHorizontal: 20,
+    marginBottom: 12,
   },
   quickActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
     paddingHorizontal: 20,
-    marginBottom: 32,
+    gap: 12,
   },
   quickAction: {
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   quickActionIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
   },
   quickActionText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
+    fontWeight: '500',
+    color: '#374151',
+    textAlign: 'center',
   },
-  section: {
-    marginBottom: 24,
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: "#2563EB",
-    fontWeight: "500",
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 20,
-    borderRadius: 16,
-    paddingVertical: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
-  },
-  tripItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  locationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  tripDetails: {
-    flex: 1,
-  },
-  tripDestination: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  tripAddress: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  savedPlace: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
     paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  savedPlaceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
+  modalCloseButton: {
+    padding: 4,
   },
-  savedPlaceDetails: {
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  modalPlaceholder: {
+    width: 32,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  inputGroup: {
+    marginTop: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  eventOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  eventOptionSelected: {
+    backgroundColor: '#EBF8FF',
+    borderColor: '#3B82F6',
+  },
+  eventOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  savedPlaceTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  savedPlaceAddress: {
+  eventOptionText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: '#374151',
+    marginLeft: 8,
   },
-  bottomSpacer: {
-    height: 100,
+  eventOptionTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  savedAddressesContainer: {
+    marginBottom: 12,
+  },
+  savedAddressesTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  savedAddressOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 4,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  savedAddressOptionSelected: {
+    backgroundColor: '#EBF8FF',
+    borderColor: '#3B82F6',
+  },
+  savedAddressContent: {
+    flex: 1,
+  },
+  savedAddressLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  savedAddressText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  passengerCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+  },
+  counterButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginHorizontal: 16,
+    minWidth: 24,
+    textAlign: 'center',
+  },
+  serviceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  serviceOptionSelected: {
+    backgroundColor: '#EBF8FF',
+    borderColor: '#3B82F6',
+  },
+  serviceOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  serviceOptionText: {
+    fontSize: 14,
+    color: '#374151',
+    marginLeft: 8,
+  },
+  serviceOptionTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  requestButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+  },
+  requestButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  requestButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
 });
 
