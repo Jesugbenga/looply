@@ -22,7 +22,7 @@ export default function SignUpScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState<'rider' | 'driver'>('rider');
+  // Everyone signs up as rider initially
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -39,7 +39,7 @@ export default function SignUpScreen() {
 
     setLoading(true);
     try {
-      await signUp(emailAddress, password, firstName, lastName, userType);
+      await signUp(emailAddress, password, firstName, lastName, 'rider');
       router.replace('/(tabs)');
     } catch (err: any) {
       console.log('Sign up error:', JSON.stringify(err, null, 2));
@@ -49,53 +49,8 @@ export default function SignUpScreen() {
     }
   };
 
-  // Add user type selection
-  const renderUserTypeSelector = () => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>I am a...</Text>
-      <View style={styles.userTypeContainer}>
-        <TouchableOpacity
-          style={[
-            styles.userTypeButton,
-            userType === 'rider' && styles.userTypeButtonActive
-          ]}
-          onPress={() => setUserType('rider')}
-        >
-          <Ionicons 
-            name="person-outline" 
-            size={24} 
-            color={userType === 'rider' ? '#FFFFFF' : '#6B7280'} 
-          />
-          <Text style={[
-            styles.userTypeText,
-            userType === 'rider' && styles.userTypeTextActive
-          ]}>
-            Rider
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[
-            styles.userTypeButton,
-            userType === 'driver' && styles.userTypeButtonActive
-          ]}
-          onPress={() => setUserType('driver')}
-        >
-          <Ionicons 
-            name="car-outline" 
-            size={24} 
-            color={userType === 'driver' ? '#FFFFFF' : '#6B7280'} 
-          />
-          <Text style={[
-            styles.userTypeText,
-            userType === 'driver' && styles.userTypeTextActive
-          ]}>
-            Driver
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  // Remove user type selector per new requirement
+  const renderUserTypeSelector = () => null;
 
   return (
     <SafeAreaView style={styles.container}>

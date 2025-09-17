@@ -5,13 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
 import { useRouter } from 'expo-router';
-import { userUtils, SavedAddress } from '@/lib/firebaseUtils';
+import { userUtils, SavedAddress, driverUtils } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import DriverRegistrationModal from '@/components/DriverRegistrationModal';
 
 // SavedAddress interface is now imported from firebaseUtils
 
 export default function RiderProfileScreen() {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, logout, switchUserRole, updateUserProfile } = useAuth();
   const { triggerRefresh } = useRefresh();
   const router = useRouter();
   const { isOnline, isConnecting, retryConnection } = useConnectionStatus();
@@ -19,13 +20,27 @@ export default function RiderProfileScreen() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [newAddress, setNewAddress] = useState({ label: '', address: '' });
   const [isDriverAvailable, setIsDriverAvailable] = useState(false);
+  const [showDriverRegistration, setShowDriverRegistration] = useState(false);
+  const [hasDriverProfile, setHasDriverProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadSavedAddresses();
       loadDriverAvailability();
+      checkDriverProfile();
     }
   }, [user]);
+
+  const checkDriverProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const driverProfile = await driverUtils.getDriverProfile(user.uid);
+      setHasDriverProfile(!!driverProfile);
+    } catch (error) {
+      console.error('Error checking driver profile:', error);
+    }
+  };
 
   const loadSavedAddresses = async () => {
     if (!user) return;
@@ -188,7 +203,8 @@ export default function RiderProfileScreen() {
 
     try {
       const newAvailability = !isDriverAvailable;
-      await userUtils.setDriverAvailability(user.uid, newAvailability);
+      // Update both Firestore and AuthContext state
+      await updateUserProfile({ isDriverAvailable: newAvailability });
       setIsDriverAvailable(newAvailability);
     } catch (error) {
       console.error('Error updating driver availability:', error);
@@ -203,6 +219,54 @@ export default function RiderProfileScreen() {
     } catch (error) {
       console.error('Sign out error:', error);
     }
+  };
+
+  const handleSwitchToDriver = async () => {
+    if (!user || !userProfile) return;
+    
+    try {
+      // Check if user has driver profile
+      if (!hasDriverProfile) {
+        Alert.alert(
+          'Driver Registration Required',
+          'You need to complete your driver registration first. This includes providing your license information and vehicle details.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Register', onPress: () => setShowDriverRegistration(true) }
+          ]
+        );
+        return;
+      }
+      
+      await switchUserRole('driver');
+      Alert.alert('Success', 'Switched to driver mode');
+      triggerRefresh(); // Refresh the UI
+      // Navigate to Home so DriverHome is visible immediately
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      console.error('Switch to driver error:', error);
+      Alert.alert('Error', error.message || 'Failed to switch to driver mode');
+    }
+  };
+
+  const handleSwitchToRider = async () => {
+    if (!user || !userProfile) return;
+    
+    try {
+      await switchUserRole('rider');
+      Alert.alert('Success', 'Switched to rider mode');
+      triggerRefresh(); // Refresh the UI
+      // Navigate to Home so RiderHome is visible immediately
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      console.error('Switch to rider error:', error);
+      Alert.alert('Error', error.message || 'Failed to switch to rider mode');
+    }
+  };
+
+  const handleDriverRegistrationSuccess = async () => {
+    await checkDriverProfile();
+    triggerRefresh();
   };
 
   return (
@@ -316,8 +380,8 @@ export default function RiderProfileScreen() {
           </TouchableOpacity>
         </View>
 
-         {/* Driver Availability Toggle */}
-         {userProfile?.userType === 'driver' && (
+        {/* Driver Availability Toggle (only when in driver mode) */}
+        {(userProfile?.lastActiveAs === 'driver') && (
           <View style={styles.card}>
             <View style={styles.availabilityRow}>
               <View style={styles.availabilityInfo}>
@@ -341,10 +405,17 @@ export default function RiderProfileScreen() {
 
          {/* Quick Actions */}
          <View style={styles.card}>
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="car-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Switch to Driver</Text>
-          </TouchableOpacity>
+          {userProfile?.lastActiveAs === 'rider' ? (
+            <TouchableOpacity style={styles.row} onPress={handleSwitchToDriver}>
+              <Ionicons name="car-outline" size={22} color="#4B5563" />
+              <Text style={styles.rowText}>Switch to Driver</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.row} onPress={handleSwitchToRider}>
+              <Ionicons name="person-outline" size={22} color="#4B5563" />
+              <Text style={styles.rowText}>Switch to Rider</Text>
+            </TouchableOpacity>
+          )}
           {/* <TouchableOpacity style={styles.row}>
             <Ionicons name="time-outline" size={22} color="#4B5563" />
             <Text style={styles.rowText}>Your Activity</Text>
@@ -460,6 +531,13 @@ export default function RiderProfileScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* Driver Registration Modal */}
+      <DriverRegistrationModal
+        visible={showDriverRegistration}
+        onClose={() => setShowDriverRegistration(false)}
+        onSuccess={handleDriverRegistrationSuccess}
+      />
     </SafeAreaView>
   );
 }

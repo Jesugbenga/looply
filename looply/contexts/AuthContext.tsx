@@ -15,9 +15,11 @@ interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
-  userType: 'rider' | 'driver';
+  userType: 'rider' | 'driver' | 'both';
   savedAddresses: any[];
   isDriverAvailable: boolean;
+  lastActiveAs: 'rider' | 'driver'; // Track last active role (not 'both')
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,10 +28,11 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName: string, lastName: string, userType: 'rider' | 'driver') => Promise<void>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, userType: 'rider' | 'driver' | 'both') => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  switchUserRole: (role: 'rider' | 'driver') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   // Create user profile in Firestore
-  const createUserProfile = async (user: User, firstName: string, lastName: string, userType: 'rider' | 'driver') => {
+  const createUserProfile = async (user: User, firstName: string, lastName: string, userType: 'rider' | 'driver' | 'both') => {
     try {
       const userProfile: UserProfile = {
         uid: user.uid,
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userType,
         savedAddresses: [],
         isDriverAvailable: false,
+        lastActiveAs: userType === 'both' ? 'rider' : userType, // Set initial active role
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -94,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Sign up function
-  const signUp = async (email: string, password: string, firstName: string, lastName: string, userType: 'rider' | 'driver') => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, userType: 'rider' | 'driver' | 'both') => {
     try {
       console.log('🚀 Starting user sign-up process...');
       
@@ -141,6 +145,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('✅ User profile created in Firestore:', userProfile);
       } else {
         console.log('✅ User profile found in Firestore:', userProfile);
+        // Ensure lastActiveAs is set for existing users
+        if (!userProfile.lastActiveAs) {
+          userProfile.lastActiveAs = userProfile.userType === 'both' ? 'rider' : userProfile.userType;
+          await updateUserProfile({ lastActiveAs: userProfile.lastActiveAs });
+        }
       }
       
       setUserProfile(userProfile);
@@ -181,6 +190,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Switch user role (rider/driver)
+  const switchUserRole = async (role: 'rider' | 'driver') => {
+    if (!user || !userProfile) throw new Error('No user logged in');
+    
+    try {
+      // Only allow switching if user has 'both' userType or is switching to their registered type
+      if (userProfile.userType !== 'both' && userProfile.userType !== role) {
+        throw new Error(`You are registered as a ${userProfile.userType}. Cannot switch to ${role}.`);
+      }
+      
+      await updateUserProfile({ lastActiveAs: role });
+      console.log(`✅ Switched to ${role} mode`);
+    } catch (error) {
+      console.error('Switch role error:', error);
+      throw error;
+    }
+  };
+
   // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -208,6 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     logout,
     updateUserProfile,
+    switchUserRole,
   };
 
   return (

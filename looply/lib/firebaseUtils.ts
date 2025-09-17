@@ -21,9 +21,34 @@ export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
-  userType: 'rider' | 'driver';
+  userType: 'rider' | 'driver' | 'both';
   savedAddresses?: SavedAddress[];
   isDriverAvailable?: boolean;
+  phone?: string;
+  lastActiveAs?: 'rider' | 'driver';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DriverProfile {
+  id: string;
+  userId: string;
+  licenseNumber: string;
+  licenseExpiry: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: number;
+  vehicleColor: string;
+  licensePlate: string;
+  vehicleType: 'sedan' | 'suv' | 'hatchback' | 'luxury';
+  seats: number;
+  isVerified: boolean;
+  isAvailable: boolean;
+  currentLocation?: {
+    lat: number;
+    lng: number;
+  };
+  totalEarnings: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +81,7 @@ export interface Ride {
   driverPhone?: string;
   carDescription?: string;
   licensePlate?: string;
+  verificationPin?: string;
 }
 
 // User Operations
@@ -186,6 +212,75 @@ export const userUtils = {
   },
 };
 
+// Driver Profile Operations
+export const driverUtils = {
+  // Create driver profile
+  async createDriverProfile(userId: string, driverData: Omit<DriverProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    try {
+      const driverProfilesCollection = collection(db, 'driverProfiles');
+      const docRef = await addDoc(driverProfilesCollection, {
+        ...driverData,
+        userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating driver profile:', error);
+      throw error;
+    }
+  },
+
+  // Get driver profile by user ID
+  async getDriverProfile(userId: string): Promise<DriverProfile | null> {
+    try {
+      const driverProfilesCollection = collection(db, 'driverProfiles');
+      const q = query(driverProfilesCollection, where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        return null;
+      }
+      
+      const doc = querySnapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data(),
+      } as DriverProfile;
+    } catch (error) {
+      console.error('Error getting driver profile:', error);
+      throw error;
+    }
+  },
+
+  // Update driver profile
+  async updateDriverProfile(profileId: string, updates: Partial<DriverProfile>): Promise<void> {
+    try {
+      const profileRef = doc(db, 'driverProfiles', profileId);
+      await updateDoc(profileRef, {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error updating driver profile:', error);
+      throw error;
+    }
+  },
+
+  // Update driver availability
+  async updateDriverAvailability(userId: string, isAvailable: boolean): Promise<void> {
+    try {
+      const profile = await this.getDriverProfile(userId);
+      if (profile) {
+        await this.updateDriverProfile(profile.id, { isAvailable });
+      }
+    } catch (error) {
+      console.error('Error updating driver availability:', error);
+      throw error;
+    }
+  },
+};
+
 // Ride Operations
 export const rideUtils = {
   // Create a new ride request
@@ -210,17 +305,11 @@ export const rideUtils = {
     try {
       const ridesCollection = collection(db, 'rides');
       const field = userType === 'rider' ? 'riderId' : 'driverId';
-      const q = query(
-        ridesCollection,
-        where(field, '==', uid),
-        orderBy('createdAt', 'desc')
-      );
-      
+      const q = query(ridesCollection, where(field, '==', uid));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Ride[];
+      return querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
     } catch (error) {
       console.error('Error getting user rides:', error);
       throw error;
@@ -231,17 +320,14 @@ export const rideUtils = {
   async getPendingRides(): Promise<Ride[]> {
     try {
       const ridesCollection = collection(db, 'rides');
-      const q = query(
-        ridesCollection,
-        where('status', '==', 'pending'),
-        orderBy('createdAt', 'desc')
-      );
-      
+      // Avoid composite index by fetching pending and sorting client-side
+      const q = query(ridesCollection, where('status', '==', 'pending'));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-      })) as Ride[];
+      }))
+      .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
     } catch (error) {
       console.error('Error getting pending rides:', error);
       throw error;
@@ -277,13 +363,21 @@ export const rideUtils = {
   // Accept a ride (driver)
   async acceptRide(rideId: string, driverId: string, driverName: string, driverPhone?: string, carDescription?: string, licensePlate?: string): Promise<void> {
     try {
-      await this.updateRideStatus(rideId, 'matched', {
+      // Generate a 4-digit verification PIN for the rider
+      const verificationPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+      // Filter out undefined values to avoid Firestore errors
+      const additionalData: any = {
         driverId,
         driverName,
-        driverPhone,
-        carDescription,
-        licensePlate,
-      });
+        verificationPin,
+      };
+
+      if (driverPhone) additionalData.driverPhone = driverPhone;
+      if (carDescription) additionalData.carDescription = carDescription;
+      if (licensePlate) additionalData.licensePlate = licensePlate;
+
+      await this.updateRideStatus(rideId, 'matched', additionalData);
     } catch (error) {
       console.error('Error accepting ride:', error);
       throw error;
@@ -328,35 +422,25 @@ export const rideUtils = {
   ): () => void {
     const ridesCollection = collection(db, 'rides');
     const field = userType === 'rider' ? 'riderId' : 'driverId';
-    const q = query(
-      ridesCollection,
-      where(field, '==', uid),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(ridesCollection, where(field, '==', uid));
 
     return onSnapshot(q, (querySnapshot) => {
-      const rides = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Ride[];
-      callback(rides);
+      const rides = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
+      callback(rides as Ride[]);
     });
   },
 
   // Subscribe to pending rides for drivers
   subscribeToPendingRides(callback: (rides: Ride[]) => void): () => void {
     const ridesCollection = collection(db, 'rides');
-    const q = query(
-      ridesCollection,
-      where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(ridesCollection, where('status', '==', 'pending'));
 
     return onSnapshot(q, (querySnapshot) => {
-      const rides = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Ride[];
+      const rides = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
       callback(rides);
     });
   },

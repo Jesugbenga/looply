@@ -19,7 +19,7 @@ const HomeScreen = () => {
   }
 
   // Driver view
-  if (userProfile?.userType === 'driver') {
+  if (userProfile?.lastActiveAs === 'driver') {
     return <DriverHome />;
   }
 
