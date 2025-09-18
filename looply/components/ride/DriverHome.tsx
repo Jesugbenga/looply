@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
 import { rideUtils, Ride, driverUtils, DriverProfile } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import { Theme } from '@/constants/Theme';
 
 export default function DriverHome() {
   const { user, userProfile } = useAuth();
@@ -169,6 +170,7 @@ export default function DriverHome() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topSpacing} />
       <ScrollView 
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -184,14 +186,14 @@ export default function DriverHome() {
             </Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#4B5563" />
+            <Ionicons name="notifications-outline" size={24} color={Theme.colors.text.tertiary} />
           </TouchableOpacity>
         </View>
 
         {/* Driver Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
-            <Ionicons name="car-outline" size={24} color="#10B981" />
+            <Ionicons name="car-outline" size={24} color={Theme.colors.status.success} />
             <Text style={styles.statusTitle}>Driver Mode</Text>
           </View>
           <Text style={styles.statusText}>
@@ -205,7 +207,7 @@ export default function DriverHome() {
         {/* Offline Warning */}
         {!isOnline && (
           <View style={styles.offlineWarning}>
-            <Ionicons name="wifi-outline" size={20} color="#EF4444" />
+            <Ionicons name="wifi-outline" size={20} color={Theme.colors.status.error} />
             <Text style={styles.offlineText}>You're offline. Some features may not work.</Text>
           </View>
         )}
@@ -215,7 +217,7 @@ export default function DriverHome() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Ride Requests</Text>
             <TouchableOpacity onPress={loadPendingRides} style={styles.refreshButton}>
-              <Ionicons name="refresh" size={20} color="#3B82F6" />
+              <Ionicons name="refresh" size={20} color={Theme.colors.primary[500]} />
             </TouchableOpacity>
           </View>
           
@@ -225,7 +227,7 @@ export default function DriverHome() {
             </View>
           ) : pendingRides.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="car-outline" size={48} color="#D1D5DB" />
+              <Ionicons name="car-outline" size={48} color={Theme.colors.text.tertiary} />
               <Text style={styles.emptyStateTitle}>No ride requests</Text>
               <Text style={styles.emptyStateText}>
                 Riders will appear here when they request rides.
@@ -236,7 +238,7 @@ export default function DriverHome() {
               <View key={ride.id} style={styles.rideCard}>
                 <View style={styles.rideHeader}>
                   <View style={styles.riderInfo}>
-                    <Ionicons name="person-circle" size={40} color="#3B82F6" />
+                    <Ionicons name="person-circle" size={40} color={Theme.colors.primary[500]} />
                     <View style={styles.riderDetails}>
                       <Text style={styles.riderName}>{ride.riderName}</Text>
                       <Text style={styles.eventName}>{ride.event}</Text>
@@ -254,16 +256,16 @@ export default function DriverHome() {
                 
                 <View style={styles.rideDetails}>
                   <View style={styles.detailRow}>
-                    <Ionicons name="people-outline" size={16} color="#6B7280" />
+                    <Ionicons name="people-outline" size={16} color={Theme.colors.text.secondary} />
                     <Text style={styles.detailText}>{ride.passengers} passenger{ride.passengers !== 1 ? 's' : ''}</Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Ionicons name="location-outline" size={16} color="#6B7280" />
+                    <Ionicons name="location-outline" size={16} color={Theme.colors.text.secondary} />
                     <Text style={styles.detailText}>{ride.address}</Text>
                   </View>
                   {ride.additionalDetails && (
                     <View style={styles.detailRow}>
-                      <Ionicons name="chatbubble-outline" size={16} color="#6B7280" />
+                      <Ionicons name="chatbubble-outline" size={16} color={Theme.colors.text.secondary} />
                       <Text style={styles.detailText}>{ride.additionalDetails}</Text>
                     </View>
                   )}
@@ -274,7 +276,7 @@ export default function DriverHome() {
                     style={[styles.actionButton, styles.declineButton]}
                     onPress={() => handleDeclineRide(ride)}
                   >
-                    <Ionicons name="close" size={20} color="#EF4444" />
+                    <Ionicons name="close" size={20} color={Theme.colors.status.error} />
                     <Text style={styles.declineButtonText}>Decline</Text>
                   </TouchableOpacity>
                   
@@ -282,7 +284,7 @@ export default function DriverHome() {
                     style={[styles.actionButton, styles.acceptButton]}
                     onPress={() => handleAcceptRide(ride)}
                   >
-                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={20} color={Theme.colors.text.primary} />
                     <Text style={styles.acceptButtonText}>Accept</Text>
                   </TouchableOpacity>
                 </View>
@@ -293,10 +295,12 @@ export default function DriverHome() {
 
         {/* Active Rides Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Active Rides</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Your Active Rides</Text>
+          </View>
           {activeRides.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="timer-outline" size={48} color="#D1D5DB" />
+              <Ionicons name="timer-outline" size={48} color={Theme.colors.text.tertiary} />
               <Text style={styles.emptyStateTitle}>No active rides</Text>
               <Text style={styles.emptyStateText}>Accepted or in-progress rides will appear here.</Text>
             </View>
@@ -305,7 +309,7 @@ export default function DriverHome() {
               <View key={ride.id} style={styles.rideCard}>
                 <View style={styles.rideHeader}>
                   <View style={styles.riderInfo}>
-                    <Ionicons name="person-circle" size={40} color="#10B981" />
+                    <Ionicons name="person-circle" size={40} color={Theme.colors.status.success} />
                     <View style={styles.riderDetails}>
                       <Text style={styles.riderName}>{ride.riderName}</Text>
                       <Text style={styles.eventName}>{ride.event}</Text>
@@ -318,7 +322,7 @@ export default function DriverHome() {
 
                 <View style={styles.rideDetails}>
                   <View style={styles.detailRow}>
-                    <Ionicons name="location-outline" size={16} color="#6B7280" />
+                    <Ionicons name="location-outline" size={16} color={Theme.colors.text.secondary} />
                     <Text style={styles.detailText}>{ride.address}</Text>
                   </View>
                 </View>
@@ -329,7 +333,7 @@ export default function DriverHome() {
                       style={[styles.actionButton, styles.acceptButton]}
                       onPress={() => handleStartRide(ride)}
                     >
-                      <Ionicons name="play" size={20} color="#FFFFFF" />
+                      <Ionicons name="play" size={20} color={Theme.colors.text.primary} />
                       <Text style={styles.acceptButtonText}>Start Ride</Text>
                     </TouchableOpacity>
                   )}
@@ -338,7 +342,7 @@ export default function DriverHome() {
                       style={[styles.actionButton, styles.acceptButton]}
                       onPress={() => handleCompleteRide(ride)}
                     >
-                      <Ionicons name="checkmark-done" size={20} color="#FFFFFF" />
+                      <Ionicons name="checkmark-done" size={20} color={Theme.colors.text.primary} />
                       <Text style={styles.acceptButtonText}>Complete Ride</Text>
                     </TouchableOpacity>
                   )}
@@ -355,72 +359,65 @@ export default function DriverHome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Theme.colors.dark.background,
+  },
+  topSpacing: {
+    height: Theme.spacing['2xl'],
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.xl,
   },
   greeting: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 4,
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.secondary,
+    marginBottom: Theme.spacing.xs,
   },
   username: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: Theme.typography.fontSize['2xl'],
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
   },
   notificationButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    padding: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    ...Theme.shadows.sm,
   },
   statusCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.lg,
+    ...Theme.shadows.sm,
   },
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Theme.spacing.sm,
   },
   statusTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   statusText: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: Theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginHorizontal: 20,
-    marginBottom: 12,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
   },
   quickActionsContainer: {
     flexDirection: 'row',
@@ -454,7 +451,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyState: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Theme.colors.dark.surfaceVariant,
     marginHorizontal: 20,
     borderRadius: 12,
     padding: 32,
@@ -466,65 +463,55 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginTop: Theme.spacing.lg,
+    marginBottom: Theme.spacing.sm,
   },
   emptyStateText: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
   },
   // New styles for ride cards
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.md,
   },
   refreshButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    padding: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+    backgroundColor: Theme.colors.dark.surfaceVariant,
   },
   loadingContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 32,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    marginHorizontal: Theme.spacing.xl,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing['3xl'],
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    ...Theme.shadows.sm,
   },
   loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 12,
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.secondary,
+    marginTop: Theme.spacing.md,
   },
   rideCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    ...Theme.frostedGlassCard,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.md,
+    padding: Theme.spacing.lg,
   },
   rideHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Theme.spacing.md,
   },
   riderInfo: {
     flexDirection: 'row',
@@ -532,90 +519,90 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   riderDetails: {
-    marginLeft: 12,
+    marginLeft: Theme.spacing.md,
     flex: 1,
   },
   riderName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.xs,
   },
   eventName: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
   },
   rideTime: {
     alignItems: 'flex-end',
   },
   timeText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3B82F6',
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.primary[500],
   },
   rideDetails: {
-    marginBottom: 16,
+    marginBottom: Theme.spacing.lg,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: Theme.spacing.xs,
   },
   detailText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    marginLeft: Theme.spacing.sm,
     flex: 1,
   },
   rideActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Theme.spacing.md,
   },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.lg,
+    borderRadius: Theme.borderRadius.lg,
   },
   declineButton: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Theme.colors.status.error + '20',
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: Theme.colors.status.error,
   },
   declineButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#EF4444',
-    marginLeft: 6,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.status.error,
+    marginLeft: Theme.spacing.xs,
   },
   acceptButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: Theme.colors.primary[500],
   },
   acceptButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    marginLeft: 6,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.xs,
   },
   // Offline warning styles
   offlineWarning: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    backgroundColor: Theme.colors.status.error + '20',
+    borderColor: Theme.colors.status.error,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.md,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.lg,
   },
   offlineText: {
     flex: 1,
-    fontSize: 14,
-    color: '#DC2626',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.status.error,
+    marginLeft: Theme.spacing.sm,
   },
 });

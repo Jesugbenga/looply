@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { rideUtils, Ride } from '@/lib/firebaseUtils';
 import RideBookingModal from './RideBookingModal';
+import { Theme } from '@/constants/Theme';
 
 interface RiderHomeProps {}
 
@@ -21,6 +22,7 @@ export default function RiderHome({}: RiderHomeProps) {
   const { isOnline } = useConnectionStatus();
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
+  const [previousRides, setPreviousRides] = useState<Ride[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -36,6 +38,12 @@ export default function RiderHome({}: RiderHomeProps) {
             ride.status === 'in-progress'
           );
           setActiveRide(active || null);
+          
+           // Get previous completed rides
+           const completed = rides.filter(ride => 
+             ride.status === 'completed' || ride.status === 'cancelled'
+           ).slice(0, 2); // Show last 2 rides
+           setPreviousRides(completed);
           
           // Show notifications for status changes
           if (active) {
@@ -97,6 +105,7 @@ export default function RiderHome({}: RiderHomeProps) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topSpacing} />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -107,7 +116,7 @@ export default function RiderHome({}: RiderHomeProps) {
             </Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#4B5563" />
+            <Ionicons name="notifications-outline" size={24} color={Theme.colors.text.tertiary} />
           </TouchableOpacity>
         </View>
 
@@ -118,7 +127,7 @@ export default function RiderHome({}: RiderHomeProps) {
               <Ionicons 
                 name={activeRide.status === 'matched' ? 'checkmark-circle' : 'time-outline'} 
                 size={24} 
-                color={activeRide.status === 'matched' ? '#10B981' : '#F59E0B'} 
+                color={activeRide.status === 'matched' ? Theme.colors.status.success : Theme.colors.status.warning} 
               />
               <Text style={styles.statusTitle}>
                 {activeRide.status === 'pending' && 'Waiting for Driver'}
@@ -144,14 +153,71 @@ export default function RiderHome({}: RiderHomeProps) {
                 style={styles.cancelButton}
                 onPress={() => handleCancelRide(activeRide)}
               >
-                <Ionicons name="close-circle-outline" size={20} color="#EF4444" />
+                <Ionicons name="close-circle-outline" size={20} color={Theme.colors.status.error} />
                 <Text style={styles.cancelButtonText}>Cancel Ride</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
 
-        {/* Quick Book Ride Button (disabled when driver available) */}
+        {/* Previous Rides */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Previous Rides</Text>
+          {previousRides.length > 0 ? (
+            previousRides.map((ride, index) => (
+              <View key={ride.id} style={styles.previousRideCard}>
+                {/* Modern Card Header */}
+                <View style={styles.previousRideCardHeader}>
+                  <View style={styles.previousRideHeaderLeft}>
+                    <View style={styles.previousRideCarIconContainer}>
+                      <Ionicons name="car-sport" size={20} color={Theme.colors.primary[500]} />
+                    </View>
+                    <View style={styles.previousRideHeaderInfo}>
+                      <Text style={styles.previousRideDate}>
+                        {new Date(ride.createdAt).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </Text>
+                      <Text style={styles.previousRideTime}>
+                        {new Date(ride.createdAt).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.previousRideStatusBadge}>
+                    <Text style={styles.previousRideStatusText}>Completed</Text>
+                  </View>
+                </View>
+                
+                {/* Clean Location Display */}
+                <View style={styles.previousRideCardContent}>
+                  <View style={styles.previousRideLocationContainer}>
+                    <View style={styles.previousRideLocationIconContainer}>
+                      <Ionicons name="location" size={14} color={Theme.colors.primary[500]} />
+                    </View>
+                    <Text style={styles.previousRideLocation}>{ride.event}</Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          ) : (
+            <TouchableOpacity style={styles.newUserTile}>
+              <View style={styles.newUserTileContent}>
+                <Ionicons name="car-outline" size={48} color={Theme.colors.primary[500]} />
+                <Text style={styles.newUserTileTitle}>Welcome to Muuv!</Text>
+                <Text style={styles.newUserTileSubtitle}>
+                  Book your first ride and start exploring the city!
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Book Ride Button - moved to bottom */}
         <TouchableOpacity
           style={[
             styles.bookRideButton,
@@ -161,39 +227,12 @@ export default function RiderHome({}: RiderHomeProps) {
           disabled={!!activeRide || (userProfile?.lastActiveAs === 'driver' && userProfile?.isDriverAvailable)}
         >
           <View style={styles.bookRideContent}>
-            <Ionicons name="car-outline" size={24} color="#FFFFFF" />
+            <Ionicons name="car-outline" size={24} color={Theme.colors.text.primary} />
             <Text style={styles.bookRideText}>
               {activeRide ? 'Ride in Progress' : 'Book a Ride'}
             </Text>
           </View>
         </TouchableOpacity>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsContainer}>
-            <TouchableOpacity style={styles.quickAction}>
-              <View style={[styles.quickActionIcon, { backgroundColor: '#EBF8FF' }]}>
-                <Ionicons name="time-outline" size={24} color="#2563EB" />
-              </View>
-              <Text style={styles.quickActionText}>My Rides</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickAction}>
-              <View style={[styles.quickActionIcon, { backgroundColor: '#F0FDF4' }]}>
-                <Ionicons name="location-outline" size={24} color="#10B981" />
-              </View>
-              <Text style={styles.quickActionText}>Saved Places</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickAction}>
-              <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="calendar-outline" size={24} color="#F59E0B" />
-              </View>
-              <Text style={styles.quickActionText}>Events</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
 
       {/* Ride Booking Modal */}
@@ -208,46 +247,41 @@ export default function RiderHome({}: RiderHomeProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Theme.colors.dark.background,
+  },
+  topSpacing: {
+    height: Theme.spacing['2xl'],
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.xl,
   },
   greeting: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 4,
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.secondary,
+    marginBottom: Theme.spacing.xs,
   },
   username: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: Theme.typography.fontSize['2xl'],
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
   },
   notificationButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    padding: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    ...Theme.shadows.sm,
   },
   bookRideButton: {
-    backgroundColor: '#3B82F6',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    backgroundColor: Theme.colors.primary[500],
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.lg,
+    ...Theme.shadows.md,
   },
   bookRideContent: {
     flexDirection: 'row',
@@ -255,106 +289,197 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bookRideText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: Theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginHorizontal: 20,
-    marginBottom: 12,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.md,
   },
-  quickActionsContainer: {
+  rideItem: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  quickAction: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.dark.borderLight,
   },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  rideIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginRight: Theme.spacing.md,
   },
-  quickActionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    textAlign: 'center',
+  rideDetails: {
+    flex: 1,
   },
-  // Status card styles
+  rideDestination: {
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.xs,
+  },
+  rideDateTime: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+  },
   statusCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    marginHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.lg,
+    ...Theme.shadows.sm,
   },
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Theme.spacing.sm,
   },
   statusTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   statusText: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
+    marginBottom: Theme.spacing.sm,
   },
   driverPhone: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3B82F6',
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.secondary,
   },
   cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    backgroundColor: '#FEF2F2',
+    marginTop: Theme.spacing.sm,
   },
   cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#EF4444',
-    marginLeft: 6,
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.status.error,
+    marginLeft: Theme.spacing.xs,
   },
   bookRideButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: Theme.colors.text.tertiary,
+  },
+  previousRideCard: {
+    ...Theme.frostedGlassCard,
+    marginHorizontal: Theme.spacing.md,
+    marginBottom: Theme.spacing.md,
+    padding: Theme.spacing.sm,
+  },
+  previousRideCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.md,
+    paddingBottom: Theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.dark.border,
+  },
+  previousRideHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  previousRideCarIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: Theme.colors.primary[500] + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Theme.spacing.xs,
+  },
+  previousRideHeaderInfo: {
+    flex: 1,
+  },
+  previousRideDate: {
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+  },
+  previousRideTime: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    fontFamily: Theme.typography.fontFamily.regular,
+    marginTop: Theme.spacing.xs,
+  },
+  previousRideStatusBadge: {
+    backgroundColor: Theme.colors.status.success,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+  },
+  previousRideStatusText: {
+    fontSize: Theme.typography.fontSize.xs,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+  },
+  previousRideCardContent: {
+    marginBottom: 1,
+  },
+  previousRideLocationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  previousRideLocationIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: Theme.borderRadius.full,
+    backgroundColor: Theme.colors.dark.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Theme.spacing.xs,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary[500],
+  },
+  previousRideLocation: {
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.primary,
+    flex: 1,
+    fontFamily: Theme.typography.fontFamily.medium,
+  },
+  newUserTile: {
+    ...Theme.frostedGlassCard,
+    marginHorizontal: Theme.spacing.sm,
+    marginBottom: Theme.spacing.md,
+    padding: Theme.spacing['2xl'],
+  },
+  newUserTileContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newUserTileTitle: {
+    fontSize: Theme.typography.fontSize.xl,
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
+    marginTop: Theme.spacing.lg,
+    marginBottom: Theme.spacing.sm,
+    textAlign: 'center',
+  },
+  newUserTileSubtitle: {
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: Theme.typography.lineHeight.relaxed * Theme.typography.fontSize.base,
   },
 });

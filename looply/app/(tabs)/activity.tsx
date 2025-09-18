@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
 import { rideUtils, Ride } from '@/lib/firebaseUtils';
+import { Theme } from '@/constants/Theme';
 
 // Ride interface is now imported from firebaseUtils
 
@@ -25,7 +26,7 @@ export default function ActivityScreen() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
+  const [activeTab, setActiveTab] = useState<'past' | 'upcoming'>('past');
 
   useEffect(() => {
     if (!user || !userProfile) return;
@@ -71,12 +72,10 @@ export default function ActivityScreen() {
 
   const filteredRides = rides.filter(ride => {
     switch (activeTab) {
-      case 'pending':
-        return ride.status === 'pending';
-      case 'active':
-        return ride.status === 'matched' || ride.status === 'in-progress';
-      case 'completed':
-        return ride.status === 'completed';
+      case 'upcoming':
+        return ride.status === 'pending' || ride.status === 'matched';
+      case 'past':
+        return ride.status === 'completed' || ride.status === 'cancelled';
       default:
         return true;
     }
@@ -85,17 +84,17 @@ export default function ActivityScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return '#F59E0B';
+        return Theme.colors.status.warning;
       case 'matched':
-        return '#3B82F6';
+        return Theme.colors.accent.blue;
       case 'in-progress':
-        return '#10B981';
+        return Theme.colors.status.success;
       case 'completed':
-        return '#6B7280';
+        return Theme.colors.text.tertiary;
       case 'cancelled':
-        return '#EF4444';
+        return Theme.colors.status.error;
       default:
-        return '#6B7280';
+        return Theme.colors.text.tertiary;
     }
   };
 
@@ -128,75 +127,52 @@ export default function ActivityScreen() {
 
   const renderRideCard = (ride: Ride) => (
     <View key={ride.id} style={styles.rideCard}>
-      <View style={styles.rideHeader}>
-        <View style={styles.eventInfo}>
-          <Text style={styles.eventName}>{ride.event}</Text>
-          <Text style={styles.eventTime}>{formatDate(ride.requestedAt)}</Text>
+      {/* Modern Card Header with Gradient Background */}
+      <View style={styles.rideCardHeader}>
+        <View style={styles.rideHeaderLeft}>
+          <View style={styles.carIconContainer}>
+            <Ionicons name="car-sport" size={24} color={Theme.colors.primary[500]} />
+          </View>
+          <View style={styles.rideHeaderInfo}>
+            <Text style={styles.rideDate}>
+              {new Date(ride.requestedAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </Text>
+            <Text style={styles.rideTime}>
+              {new Date(ride.requestedAt).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ride.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(ride.status)}</Text>
+        <View style={[styles.rideStatusBadge, { backgroundColor: getStatusColor(ride.status) }]}>
+          <Text style={styles.rideStatusText}>{getStatusText(ride.status)}</Text>
         </View>
       </View>
-
-      <View style={styles.rideDetails}>
-        <View style={styles.detailRow}>
-          <Ionicons name="people-outline" size={16} color="#6B7280" />
-          <Text style={styles.detailText}>{ride.passengers} passenger{ride.passengers > 1 ? 's' : ''}</Text>
+      
+      {/* Modern Route Visualization */}
+      <View style={styles.rideCardContent}>
+        <View style={styles.routeContainer}>
+          <View style={styles.routeLine} />
+          <View style={styles.locationContainer}>
+            <View style={styles.locationIconContainer}>
+              <Ionicons name="location" size={16} color={Theme.colors.primary[500]} />
+            </View>
+            <Text style={styles.rideLocation}>{ride.address}</Text>
+          </View>
+          
+          <View style={styles.locationContainer}>
+            <View style={[styles.locationIconContainer, styles.destinationIconContainer]}>
+              <Ionicons name="flag" size={16} color={Theme.colors.status.success} />
+            </View>
+            <Text style={styles.rideLocation}>{ride.event}</Text>
+          </View>
         </View>
-        
-        <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={16} color="#6B7280" />
-          <Text style={styles.detailText}>{ride.address}</Text>
-        </View>
-
-        {ride.pickupRequired && (
-          <View style={styles.detailRow}>
-            <Ionicons name="arrow-up-circle-outline" size={16} color="#10B981" />
-            <Text style={styles.detailText}>Pickup required</Text>
-          </View>
-        )}
-
-        {ride.dropoffRequired && (
-          <View style={styles.detailRow}>
-            <Ionicons name="arrow-down-circle-outline" size={16} color="#3B82F6" />
-            <Text style={styles.detailText}>Dropoff required</Text>
-          </View>
-        )}
-
-        {userProfile?.userType === 'driver' && ride.riderName && (
-          <View style={styles.detailRow}>
-            <Ionicons name="person-outline" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>Rider: {ride.riderName}</Text>
-          </View>
-        )}
-
-        {userProfile?.userType === 'rider' && ride.driverName && (
-          <View style={styles.detailRow}>
-            <Ionicons name="car-outline" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>Driver: {ride.driverName}</Text>
-          </View>
-        )}
-
-        {ride.additionalDetails && (
-          <View style={styles.detailRow}>
-            <Ionicons name="chatbubble-outline" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>{ride.additionalDetails}</Text>
-          </View>
-        )}
       </View>
-
-      {(ride.status === 'matched' || ride.status === 'in-progress') && (
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="call-outline" size={16} color="#3B82F6" />
-            <Text style={styles.actionButtonText}>Call</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="chatbubble-outline" size={16} color="#3B82F6" />
-            <Text style={styles.actionButtonText}>Message</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 
@@ -212,6 +188,7 @@ export default function ActivityScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topSpacing} />
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -220,7 +197,10 @@ export default function ActivityScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Your Rides</Text>
+          <View style={styles.titleContainer}>
+            <Ionicons name="time-outline" size={24} color={Theme.colors.text.primary} />
+            <Text style={styles.title}>Activity</Text>
+          </View>
           <Text style={styles.subtitle}>
             {userProfile?.userType === 'driver' ? 'Rides you\'ve provided' : 'Your ride history'}
           </Text>
@@ -228,7 +208,7 @@ export default function ActivityScreen() {
 
         {/* Filter Tabs */}
         <View style={styles.tabContainer}>
-          {['all', 'pending', 'active', 'completed'].map((tab) => (
+          {['past', 'upcoming'].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[
@@ -252,10 +232,10 @@ export default function ActivityScreen() {
         {/* Rides List */}
         {filteredRides.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="time-outline" size={64} color="#D1D5DB" />
+            <Ionicons name="time-outline" size={64} color={Theme.colors.text.tertiary} />
             <Text style={styles.emptyTitle}>No rides found</Text>
             <Text style={styles.emptySubtitle}>
-              {activeTab === 'all' 
+              {activeTab === 'past' 
                 ? 'You haven\'t taken any rides yet'
                 : `No ${activeTab} rides found`
               }
@@ -274,7 +254,10 @@ export default function ActivityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Theme.colors.dark.background,
+  },
+  topSpacing: {
+    height: Theme.spacing['4xl'],
   },
   scrollView: {
     flex: 1,
@@ -285,135 +268,221 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    padding: 20,
-    paddingBottom: 10,
+    padding: Theme.spacing.xl,
+    paddingBottom: Theme.spacing.sm,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.xs,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
+    fontSize: Theme.typography.fontSize['3xl'],
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.secondary,
   },
   tabContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#E5E7EB',
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.lg,
+    marginRight: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+    backgroundColor: Theme.colors.dark.surfaceVariant,
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: Theme.colors.primary[500],
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.secondary,
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: Theme.colors.text.primary,
   },
   ridesList: {
-    paddingHorizontal: 20,
-  },
-  rideCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    paddingHorizontal: Theme.spacing.xl,
   },
   rideHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: Theme.spacing.md,
   },
   eventInfo: {
     flex: 1,
   },
   eventName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
     marginBottom: 2,
   },
   eventTime: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.xs,
+    borderRadius: Theme.borderRadius.lg,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  rideDetails: {
-    marginBottom: 12,
+    fontSize: Theme.typography.fontSize.xs,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: Theme.spacing.xs,
   },
   detailText: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    marginLeft: Theme.spacing.sm,
     flex: 1,
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Theme.spacing.md,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.md,
+    backgroundColor: Theme.colors.dark.surface,
+    borderRadius: Theme.borderRadius.sm,
   },
   actionButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#3B82F6',
-    marginLeft: 4,
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.accent.blue,
+    marginLeft: Theme.spacing.xs,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingVertical: Theme.spacing['6xl'],
+    paddingHorizontal: Theme.spacing['4xl'],
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginTop: Theme.spacing.lg,
+    marginBottom: Theme.spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: Theme.typography.lineHeight.relaxed * Theme.typography.fontSize.sm,
+  },
+  rideCard: {
+    ...Theme.frostedGlassCard,
+    marginHorizontal: Theme.spacing.sm,
+    marginBottom: Theme.spacing.md,
+    padding: Theme.spacing.md,
+  },
+  rideCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.sm,
+    paddingBottom: Theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.dark.border,
+  },
+  rideHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  carIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: Theme.colors.primary[500] + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Theme.spacing.sm,
+  },
+  rideHeaderInfo: {
+    flex: 1,
+  },
+  rideDate: {
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+  },
+  rideTime: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    fontFamily: Theme.typography.fontFamily.regular,
+    marginTop: Theme.spacing.xs,
+  },
+  rideStatusBadge: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
+  },
+  rideStatusText: {
+    fontSize: Theme.typography.fontSize.xs,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+  },
+  rideCardContent: {
+    marginBottom: Theme.spacing.sm,
+  },
+  routeContainer: {
+    position: 'relative',
+  },
+  routeLine: {
+    position: 'absolute',
+    left: 20,
+    top: 20,
+    bottom: 20,
+    width: 2,
+    backgroundColor: Theme.colors.primary[500] + '40',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.md,
+    paddingLeft: Theme.spacing['3xl'],
+  },
+  locationIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: Theme.borderRadius.full,
+    backgroundColor: Theme.colors.dark.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Theme.spacing.sm,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary[500],
+  },
+  destinationIconContainer: {
+    borderColor: Theme.colors.status.success,
+  },
+  rideLocation: {
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.primary,
+    flex: 1,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
 });

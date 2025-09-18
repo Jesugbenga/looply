@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { userUtils, SavedAddress, driverUtils } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import DriverRegistrationModal from '@/components/DriverRegistrationModal';
+import { Theme } from '@/constants/Theme';
 
 // SavedAddress interface is now imported from firebaseUtils
 
@@ -271,66 +272,38 @@ export default function RiderProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topSpacing} />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=1" }}
-            style={styles.profileImage}
-          />
-          <Text style={styles.name}>
-            {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.displayName || 'User'}
-          </Text>
-          <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]} />
-            <Text style={styles.statusText}>
-              {isOnline ? 'Online' : 'Offline'}
+          <Text style={styles.greeting}>Hi there 👋</Text>
+          <View style={styles.userInfo}>
+            <Text style={styles.name}>
+              {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.displayName || 'User'}
             </Text>
-          </View>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.rating}>4.8</Text>
-            <Text style={styles.ratingCount}>(24 rides)</Text>
+            <Image
+              source={{ uri: "https://i.pravatar.cc/150?img=1" }}
+              style={styles.profileImage}
+            />
           </View>
         </View>
 
-        {/* Offline Warning */}
-        {!isOnline && (
-          <View style={styles.offlineWarning}>
-            <Ionicons name="wifi-outline" size={20} color="#EF4444" />
-            <Text style={styles.offlineText}>You're offline. Some features may not work.</Text>
-            <TouchableOpacity 
-              style={styles.retryButton} 
-              onPress={retryConnection}
-              disabled={isConnecting}
-            >
-              <Text style={styles.retryButtonText}>
-                {isConnecting ? 'Retrying...' : 'Retry'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>15</Text>
-            <Text style={styles.statLabel}>Total Rides</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>4.8</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>$247</Text>
-            <Text style={styles.statLabel}>Total Spent</Text>
-          </View>
+        {/* Quick Access Buttons */}
+        <View style={styles.quickAccessContainer}>
+          <TouchableOpacity style={styles.quickAccessButton}>
+            <Ionicons name="help-circle-outline" size={24} color={Theme.colors.text.primary} />
+            <Text style={styles.quickAccessText}>Help</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAccessButton}>
+            <Ionicons name="car-outline" size={24} color={Theme.colors.text.primary} />
+            <Text style={styles.quickAccessText}>Trips</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Saved Addresses */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="location-outline" size={22} color="#4B5563" />
+            <Ionicons name="location-outline" size={22} color={Theme.colors.text.primary} />
             <Text style={styles.rowText}>Saved Addresses</Text>
           </View>
           
@@ -340,8 +313,11 @@ export default function RiderProfileScreen() {
               <Text style={styles.emptyAddressSubtext}>Add an address to make booking easier</Text>
             </View>
           ) : (
-            savedAddresses.map((address) => (
-              <View key={address.id} style={styles.addressItem}>
+            savedAddresses.map((address, index) => (
+              <View key={address.id} style={[
+                styles.addressItem,
+                index === savedAddresses.length - 1 && styles.lastAddressItem
+              ]}>
                 <View style={styles.addressInfo}>
                   <Text style={styles.addressLabel}>
                     {address.label}
@@ -357,14 +333,14 @@ export default function RiderProfileScreen() {
                       onPress={() => setDefaultAddress(address.id)}
                       style={styles.addressActionButton}
                     >
-                      <Ionicons name="star-outline" size={16} color="#F59E0B" />
+                      <Ionicons name="star-outline" size={16} color={Theme.colors.status.warning} />
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
                     onPress={() => deleteAddress(address.id)}
                     style={styles.addressActionButton}
                   >
-                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Ionicons name="trash-outline" size={16} color={Theme.colors.status.error} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -375,7 +351,7 @@ export default function RiderProfileScreen() {
             style={styles.addAddressButton}
             onPress={() => setShowAddressModal(true)}
           >
-            <Ionicons name="add-outline" size={20} color="#3B82F6" />
+            <Ionicons name="add-outline" size={20} color={Theme.colors.primary[500]} />
             <Text style={styles.addAddressText}>Add Address</Text>
           </TouchableOpacity>
         </View>
@@ -385,7 +361,7 @@ export default function RiderProfileScreen() {
           <View style={styles.card}>
             <View style={styles.availabilityRow}>
               <View style={styles.availabilityInfo}>
-                <Ionicons name="car-outline" size={22} color="#4B5563" />
+                <Ionicons name="car-outline" size={22} color={Theme.colors.text.primary} />
                 <View style={styles.availabilityTextContainer}>
                   <Text style={styles.rowText}>Driver Availability</Text>
                   <Text style={styles.availabilitySubtext}>
@@ -403,62 +379,45 @@ export default function RiderProfileScreen() {
           </View>
         )}
 
-         {/* Quick Actions */}
-         <View style={styles.card}>
+        {/* Switch Role Button */}
+        <View style={styles.menuContainer}>
           {userProfile?.lastActiveAs === 'rider' ? (
-            <TouchableOpacity style={styles.row} onPress={handleSwitchToDriver}>
-              <Ionicons name="car-outline" size={22} color="#4B5563" />
-              <Text style={styles.rowText}>Switch to Driver</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={handleSwitchToDriver}>
+              <Ionicons name="car-outline" size={20} color={Theme.colors.text.primary} />
+              <Text style={styles.menuText}>Switch to Driver</Text>
+              <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.row} onPress={handleSwitchToRider}>
-              <Ionicons name="person-outline" size={22} color="#4B5563" />
-              <Text style={styles.rowText}>Switch to Rider</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={handleSwitchToRider}>
+              <Ionicons name="person-outline" size={20} color={Theme.colors.text.primary} />
+              <Text style={styles.menuText}>Switch to Rider</Text>
+              <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
             </TouchableOpacity>
           )}
-          {/* <TouchableOpacity style={styles.row}>
-            <Ionicons name="time-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Your Activity</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="heart-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Favorite Places</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="card-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Payment Methods</Text>
-          </TouchableOpacity> */}
-        {/* </View>
+        </View>
 
-        {/* Account Settings */}
-   
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="person-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Personal Information</Text>
+        {/* Menu Items */}
+        <View style={styles.menuContainer}>
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="mail-outline" size={20} color={Theme.colors.text.primary} />
+            <Text style={styles.menuText}>Messages</Text>
+            <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
           </TouchableOpacity>
-          {/* <TouchableOpacity style={styles.row}>
-            <Ionicons name="notifications-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Notifications</Text>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="settings-outline" size={20} color={Theme.colors.text.primary} />
+            <Text style={styles.menuText}>Settings</Text>
+            <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="shield-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Privacy & Security</Text>
-          </TouchableOpacity> */}
-        
-
-        {/* Help & Support */}
-          {/* <TouchableOpacity style={styles.row}>
-            <Ionicons name="help-circle-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Help Center</Text>
-          </TouchableOpacity> */}
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="mail-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Contact Support</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row}>
-            <Ionicons name="star-outline" size={22} color="#4B5563" />
-            <Text style={styles.rowText}>Rate the App</Text>
-          </TouchableOpacity>
+          
+          {/* Only show Legal for drivers */}
+          {userProfile?.lastActiveAs === 'driver' && (
+            <TouchableOpacity style={styles.menuItem}>
+              <Ionicons name="document-text-outline" size={20} color={Theme.colors.text.primary} />
+              <Text style={styles.menuText}>Legal</Text>
+              <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Sign Out */}
@@ -469,7 +428,7 @@ export default function RiderProfileScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          {/* <Text style={styles.footerText}>App version 1.0.0</Text> */}
+          {/* <Text style={styles.versionText}>v2.128.10002</Text> */}
         </View>
       </ScrollView>
 
@@ -545,138 +504,121 @@ export default function RiderProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Theme.colors.dark.background,
+  },
+  topSpacing: {
+    height: Theme.spacing['2xl'],
   },
   header: {
-    alignItems: "center",
-    marginTop: 80,
-    marginBottom: 24,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingTop: Theme.spacing['4xl'],
+    paddingBottom: Theme.spacing.xl,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 12,
+  greeting: {
+    fontSize: Theme.typography.fontSize.lg,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.sm,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   name: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10B981",
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    color: "#10B981",
-    fontWeight: "500",
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  rating: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginLeft: 4,
-    marginRight: 6,
-  },
-  ratingCount: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  statCard: {
+    fontSize: Theme.typography.fontSize['2xl'],
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    marginHorizontal: 4,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
     borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
   },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
+  quickAccessContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
+    gap: Theme.spacing.md,
   },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    textAlign: "center",
+  quickAccessButton: {
+    flex: 1,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  quickAccessText: {
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginTop: Theme.spacing.xs,
+  },
+  menuContainer: {
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    marginHorizontal: Theme.spacing.xl,
+    marginVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.xl,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: Theme.colors.dark.borderLight,
+  },
+  menuText: {
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.md,
+    flex: 1,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    paddingVertical: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    ...Theme.frostedGlassCard,
+    marginHorizontal: Theme.spacing.xl,
+    marginVertical: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.sm,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.lg,
   },
   rowText: {
-    fontSize: 16,
-    color: "#374151",
-    marginLeft: 12,
-    fontWeight: "500",
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.md,
+    fontWeight: Theme.typography.fontWeight.medium,
   },
   signOutCard: {
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    marginHorizontal: Theme.spacing.xl,
+    marginVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius.xl,
+    paddingVertical: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    ...Theme.shadows.md,
   },
   signOutText: {
-    fontSize: 16,
-    color: "#EF4444",
-    marginLeft: 12,
-    fontWeight: "500",
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.status.error,
+    marginLeft: Theme.spacing.md,
+    fontWeight: Theme.typography.fontWeight.medium,
   },
   footer: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: Theme.spacing['4xl'],
   },
-  footerText: {
-    color: "#9CA3AF",
-    fontSize: 14,
+  versionText: {
+    color: Theme.colors.text.tertiary,
+    fontSize: Theme.typography.fontSize.sm,
   },
   // Driver availability styles
   availabilityRow: {
@@ -735,75 +677,77 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   emptyAddresses: {
-    padding: 20,
+    padding: Theme.spacing['2xl'],
     alignItems: "center",
   },
   emptyAddressText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: 4,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.xs,
   },
   emptyAddressSubtext: {
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
     textAlign: "center",
   },
   addressItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: Theme.colors.dark.border,
+  },
+  lastAddressItem: {
+    borderBottomWidth: 0,
   },
   addressInfo: {
     flex: 1,
   },
   addressLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
-    marginBottom: 2,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.xs,
   },
   defaultBadge: {
-    fontSize: 12,
-    color: "#10B981",
-    fontWeight: "600",
+    fontSize: Theme.typography.fontSize.xs,
+    color: Theme.colors.status.success,
+    fontWeight: Theme.typography.fontWeight.semiBold,
   },
   addressText: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 20,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
   },
   addressActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   addressActionButton: {
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: "#F3F4F6",
+    padding: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
   },
   addAddressButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: "#EBF8FF",
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.lg,
+    marginHorizontal: Theme.spacing.lg,
+    marginVertical: Theme.spacing.sm,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "#3B82F6",
-    borderStyle: "dashed",
+    borderColor: Theme.colors.primary[500],
   },
   addAddressText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#3B82F6",
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.primary[500],
+    marginLeft: Theme.spacing.sm,
   },
   // Modal styles
   modalContainer: {

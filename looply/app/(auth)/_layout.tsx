@@ -16,5 +16,11 @@ export default function AuthLayout() {
   }
 
   // If not signed in, show the auth screens
-  return <Stack />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    />
+  );
 }

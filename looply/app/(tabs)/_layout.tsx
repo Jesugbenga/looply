@@ -8,6 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { Theme } from '@/constants/Theme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -26,15 +27,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Theme.colors.primary[500],
+        tabBarInactiveTintColor: Theme.colors.text.tertiary,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
             position: 'absolute',
+            backgroundColor: Theme.colors.dark.surfaceVariant,
+            borderTopColor: Theme.colors.dark.border,
           },
-          default: {},
+          default: {
+            backgroundColor: Theme.colors.dark.surfaceVariant,
+            borderTopColor: Theme.colors.dark.border,
+          },
         }),
       }}>
       <Tabs.Screen

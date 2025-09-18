@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
 import { userUtils, rideUtils, SavedAddress } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import { Theme } from '@/constants/Theme';
 
 // SavedAddress interface is now imported from firebaseUtils
 
