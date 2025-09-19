@@ -234,10 +234,12 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
     marginBottom: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   subtitle: {
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.secondary,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   form: {
     flex: 1,
@@ -254,6 +256,7 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.medium,
     color: Theme.colors.text.primary,
     marginBottom: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -269,6 +272,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.primary,
     marginLeft: Theme.spacing.md,
+    fontFamily: Theme.typography.fontFamily.regular,
   },
   nameInput: {
     backgroundColor: Theme.colors.dark.surfaceVariant,
@@ -278,6 +282,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.primary,
     ...Theme.shadows.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
   },
   inputIcon: {
     marginLeft: Theme.spacing.xs,
@@ -312,11 +317,13 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.primary,
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.semiBold,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   signUpButtonText: {
     color: Theme.colors.text.primary,
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.semiBold,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   buttonDisabled: {
     backgroundColor: Theme.colors.text.tertiary,
@@ -335,6 +342,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.text.tertiary,
     marginHorizontal: Theme.spacing.lg,
+    fontFamily: Theme.typography.fontFamily.regular,
   },
   socialButtons: {
     flexDirection: 'row',
@@ -356,6 +364,7 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.medium,
     color: Theme.colors.text.primary,
     marginLeft: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   footer: {
     flexDirection: 'row',
@@ -382,6 +391,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.secondary,
     textAlign: 'center',
     lineHeight: Theme.typography.lineHeight.relaxed * Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
   },
   termsLink: {
     color: Theme.colors.primary[500],
@@ -409,12 +419,14 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.primary,
     marginBottom: Theme.spacing.sm,
     textAlign: 'center',
+    fontFamily: Theme.typography.fontFamily.bold,
   },
   verificationSubtitle: {
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.secondary,
     textAlign: 'center',
     marginBottom: Theme.spacing['3xl'],
+    fontFamily: Theme.typography.fontFamily.regular,
   },
   codeInput: {
     backgroundColor: Theme.colors.dark.surfaceVariant,
@@ -426,6 +438,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.primary,
     letterSpacing: 8,
     ...Theme.shadows.sm,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   verifyButton: {
     backgroundColor: Theme.colors.primary[500],
@@ -440,6 +453,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.semiBold,
     textAlign: 'center',
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   resendButton: {
     marginTop: Theme.spacing.lg,
@@ -448,6 +462,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.primary[500],
     fontWeight: Theme.typography.fontWeight.medium,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   // User type selector styles
   userTypeContainer: {
@@ -475,6 +490,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
     marginLeft: 8,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   userTypeTextActive: {
     color: '#FFFFFF',

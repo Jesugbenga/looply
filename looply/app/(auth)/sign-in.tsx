@@ -56,7 +56,7 @@ export default function SignInScreen() {
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="#374151" />
-            </TouchableOpacity> */}
+            </TouchableOpacity> */} 
           </View>
 
           {/* Title Section */}

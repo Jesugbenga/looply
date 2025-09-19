@@ -276,10 +276,9 @@ export default function RiderProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hi there 👋</Text>
           <View style={styles.userInfo}>
             <Text style={styles.name}>
-              {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.displayName || 'User'}
+              Hi there, {userProfile ? `${userProfile.firstName} 👋` : user?.displayName || 'User'}
             </Text>
             <Image
               source={{ uri: "https://i.pravatar.cc/150?img=1" }}
@@ -515,9 +514,9 @@ const styles = StyleSheet.create({
     paddingBottom: Theme.spacing.xl,
   },
   greeting: {
-    fontSize: Theme.typography.fontSize.lg,
+    fontSize: Theme.typography.fontSize['lg'],
     color: Theme.colors.text.primary,
-    marginBottom: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   userInfo: {
     flexDirection: 'row',
@@ -529,16 +528,17 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
     flex: 1,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   profileImage: {
-    width: 60,
-    height: 60,
+    width: 65,
+    height: 65,
     borderRadius: 12,
   },
   quickAccessContainer: {
     flexDirection: 'row',
     paddingHorizontal: Theme.spacing.xl,
-    marginBottom: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xs,
     gap: Theme.spacing.md,
   },
   quickAccessButton: {
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: Theme.colors.dark.surfaceVariant,
     marginHorizontal: Theme.spacing.xl,
-    marginVertical: Theme.spacing.md,
+    marginVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.xl,
     overflow: 'hidden',
   },
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: Theme.colors.dark.border,
   },
   emptyAddresses: {
     padding: Theme.spacing['2xl'],

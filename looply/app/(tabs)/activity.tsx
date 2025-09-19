@@ -88,9 +88,9 @@ export default function ActivityScreen() {
       case 'matched':
         return Theme.colors.accent.blue;
       case 'in-progress':
-        return Theme.colors.status.success;
+        return Theme.colors.status.info;
       case 'completed':
-        return Theme.colors.text.tertiary;
+        return Theme.colors.status.success;
       case 'cancelled':
         return Theme.colors.status.error;
       default:
@@ -281,6 +281,7 @@ const styles = StyleSheet.create({
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
     marginLeft: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   subtitle: {
     fontSize: Theme.typography.fontSize.base,
@@ -426,12 +427,11 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.semiBold,
     color: Theme.colors.text.primary,
-    fontFamily: Theme.typography.fontFamily.semiBold,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   rideTime: {
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.text.secondary,
-    fontFamily: Theme.typography.fontFamily.regular,
     marginTop: Theme.spacing.xs,
   },
   rideStatusBadge: {
@@ -442,11 +442,10 @@ const styles = StyleSheet.create({
   rideStatusText: {
     fontSize: Theme.typography.fontSize.xs,
     fontWeight: Theme.typography.fontWeight.semiBold,
-    color: Theme.colors.text.primary,
-    fontFamily: Theme.typography.fontFamily.semiBold,
+    color: Theme.colors.text.primary, 
   },
   rideCardContent: {
-    marginBottom: Theme.spacing.sm,
+    marginBottom: 0,
   },
   routeContainer: {
     position: 'relative',
@@ -483,6 +482,5 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.primary,
     flex: 1,
-    fontFamily: Theme.typography.fontFamily.medium,
   },
 });

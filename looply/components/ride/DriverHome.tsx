@@ -168,9 +168,19 @@ export default function DriverHome() {
     );
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return 'Good morning 👋';
+    } else if (hour < 17) {
+      return 'Good afternoon 👋';
+    } else {
+      return 'Good evening 👋';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.topSpacing} />
       <ScrollView 
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -180,7 +190,7 @@ export default function DriverHome() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning 👋</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.username}>
               {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'Driver'}
             </Text>
@@ -361,9 +371,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Theme.colors.dark.background,
   },
-  topSpacing: {
-    height: Theme.spacing['2xl'],
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -375,11 +382,13 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.secondary,
     marginBottom: Theme.spacing.xs,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   username: {
     fontSize: Theme.typography.fontSize['2xl'],
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   notificationButton: {
     padding: Theme.spacing.sm,

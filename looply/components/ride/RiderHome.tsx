@@ -103,6 +103,51 @@ export default function RiderHome({}: RiderHomeProps) {
     );
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return Theme.colors.status.warning;
+      case 'matched':
+        return Theme.colors.accent.blue;
+      case 'in-progress':
+        return Theme.colors.status.success;
+      case 'completed':
+        return Theme.colors.status.success;
+      case 'cancelled':
+        return Theme.colors.status.error;
+      default:
+        return Theme.colors.text.tertiary;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pending Match';
+      case 'matched':
+        return 'Matched';
+      case 'in-progress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return 'Good morning 👋';
+    } else if (hour < 17) {
+      return 'Good afternoon 👋';
+    } else {
+      return 'Good evening 👋';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topSpacing} />
@@ -110,7 +155,7 @@ export default function RiderHome({}: RiderHomeProps) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning 👋</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.username}>
               {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.email}
             </Text>
@@ -188,8 +233,8 @@ export default function RiderHome({}: RiderHomeProps) {
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.previousRideStatusBadge}>
-                    <Text style={styles.previousRideStatusText}>Completed</Text>
+                  <View style={[styles.previousRideStatusBadge, { backgroundColor: getStatusColor(ride.status) }]}>
+                    <Text style={styles.previousRideStatusText}>{getStatusText(ride.status)}</Text>
                   </View>
                 </View>
                 
@@ -263,11 +308,13 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.secondary,
     marginBottom: Theme.spacing.xs,
+    fontFamily: Theme.typography.fontFamily.medium,
   },
   username: {
     fontSize: Theme.typography.fontSize['2xl'],
     fontWeight: Theme.typography.fontWeight.bold,
     color: Theme.colors.text.primary,
+    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   notificationButton: {
     padding: Theme.spacing.sm,
@@ -382,7 +429,7 @@ const styles = StyleSheet.create({
     ...Theme.frostedGlassCard,
     marginHorizontal: Theme.spacing.md,
     marginBottom: Theme.spacing.md,
-    padding: Theme.spacing.sm,
+    padding: Theme.spacing.md,
   },
   previousRideCardHeader: {
     flexDirection: 'row',
@@ -405,7 +452,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.primary[500] + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Theme.spacing.xs,
+    marginRight: Theme.spacing.md,
   },
   previousRideHeaderInfo: {
     flex: 1,
@@ -419,7 +466,6 @@ const styles = StyleSheet.create({
   previousRideTime: {
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.text.secondary,
-    fontFamily: Theme.typography.fontFamily.regular,
     marginTop: Theme.spacing.xs,
   },
   previousRideStatusBadge: {
@@ -432,7 +478,6 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.xs,
     fontWeight: Theme.typography.fontWeight.semiBold,
     color: Theme.colors.text.primary,
-    fontFamily: Theme.typography.fontFamily.semiBold,
   },
   previousRideCardContent: {
     marginBottom: 1,
@@ -448,7 +493,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Theme.spacing.xs,
+    marginRight: Theme.spacing.sm,
     borderWidth: 2,
     borderColor: Theme.colors.primary[500],
   },
@@ -456,7 +501,6 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.base,
     color: Theme.colors.text.primary,
     flex: 1,
-    fontFamily: Theme.typography.fontFamily.medium,
   },
   newUserTile: {
     ...Theme.frostedGlassCard,
