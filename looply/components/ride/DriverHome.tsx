@@ -11,14 +11,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
-import { rideUtils, Ride, driverUtils, DriverProfile } from '@/lib/firebaseUtils';
+import { rideUtils, Ride, driverUtils, DriverProfile, rideMatchingService } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { Theme } from '@/constants/Theme';
 
 export default function DriverHome() {
   const { user, userProfile } = useAuth();
   const { isOnline } = useConnectionStatus();
-  const [pendingRides, setPendingRides] = useState<Ride[]>([]);
+  const [pendingRideRequests, setPendingRideRequests] = useState<any[]>([]);
   const [activeRides, setActiveRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -26,7 +26,7 @@ export default function DriverHome() {
 
   useEffect(() => {
     if (user) {
-      loadPendingRides();
+      loadDriverRideRequests();
       loadDriverProfile();
     }
   }, [user]);
@@ -42,20 +42,31 @@ export default function DriverHome() {
     }
   };
 
-  const loadPendingRides = async () => {
+  const loadDriverRideRequests = async () => {
     if (!user) return;
     
     try {
       setLoading(true);
-      const rides = await rideUtils.getPendingRides();
-      // Do not show your own ride requests if you are also a rider
-      const filtered = rides.filter(r => r.riderId !== user.uid);
-      setPendingRides(filtered);
+      // Get driver profile to get driver ID
+      const profile = await driverUtils.getDriverProfile(user.uid);
+      if (!profile) {
+        console.log('No driver profile found');
+        setPendingRideRequests([]);
+        return;
+      }
+      
+      // Get ride requests specifically sent to this driver
+      const rideRequests = await rideMatchingService.getDriverRideRequests(profile.id);
+      console.log(`📋 Found ${rideRequests.length} ride requests for driver ${profile.id}`);
+      
+      // No need to filter out own requests since matching prevents same person from being selected
+      setPendingRideRequests(rideRequests);
+      
       // Also fetch current driver's active rides (matched/in-progress)
       const myRides = await rideUtils.getUserRides(user.uid, 'driver');
       setActiveRides(myRides.filter(r => r.status === 'matched' || r.status === 'in-progress'));
     } catch (error) {
-      console.error('Error loading pending rides:', error);
+      console.error('Error loading driver ride requests:', error);
       Alert.alert('Error', 'Failed to load ride requests');
     } finally {
       setLoading(false);
@@ -64,32 +75,26 @@ export default function DriverHome() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPendingRides();
+    await loadDriverRideRequests();
     setRefreshing(false);
   };
 
-  const handleAcceptRide = async (ride: Ride) => {
-    if (!user || !userProfile) return;
+  const handleAcceptRide = async (rideRequest: any) => {
+    if (!user || !userProfile || !driverProfile) return;
 
     Alert.alert(
       'Accept Ride Request',
-      `Accept ride request from ${ride.riderName}?`,
+      `Accept ride request from ${rideRequest.riderName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Accept',
           onPress: async () => {
             try {
-              await rideUtils.acceptRide(
-                ride.id,
-                user.uid,
-                `${userProfile.firstName} ${userProfile.lastName}`,
-                userProfile.phone || undefined,
-                driverProfile ? `${driverProfile.vehicleYear} ${driverProfile.vehicleMake} ${driverProfile.vehicleModel}` : undefined,
-                driverProfile?.licensePlate || undefined
-              );
+              // Use the new ride matching service to accept the ride
+              await rideMatchingService.driverAcceptRide(driverProfile.id, rideRequest.rideId);
               Alert.alert('Success', 'Ride request accepted!');
-              await loadPendingRides(); // Refresh the list
+              await loadDriverRideRequests(); // Refresh the list
             } catch (error) {
               console.error('Error accepting ride:', error);
               Alert.alert('Error', 'Failed to accept ride request');
@@ -100,10 +105,12 @@ export default function DriverHome() {
     );
   };
 
-  const handleDeclineRide = async (ride: Ride) => {
+  const handleDeclineRide = async (rideRequest: any) => {
+    if (!driverProfile) return;
+
     Alert.alert(
       'Decline Ride Request',
-      `Decline ride request from ${ride.riderName}?`,
+      `Decline ride request from ${rideRequest.riderName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -111,9 +118,10 @@ export default function DriverHome() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await rideUtils.cancelRide(ride.id);
+              // Use the new ride matching service to decline the ride
+              await rideMatchingService.driverDeclineRide(driverProfile.id, rideRequest.rideId);
               Alert.alert('Success', 'Ride request declined');
-              await loadPendingRides(); // Refresh the list
+              await loadDriverRideRequests(); // Refresh the list
             } catch (error) {
               console.error('Error declining ride:', error);
               Alert.alert('Error', 'Failed to decline ride request');
@@ -135,7 +143,7 @@ export default function DriverHome() {
           onPress: async () => {
             try {
               await rideUtils.startRide(ride.id);
-              await loadPendingRides();
+              await loadDriverRideRequests();
             } catch (error) {
               console.error('Error starting ride:', error);
               Alert.alert('Error', 'Failed to start ride');
@@ -157,7 +165,7 @@ export default function DriverHome() {
           onPress: async () => {
             try {
               await rideUtils.completeRide(ride.id);
-              await loadPendingRides();
+              await loadDriverRideRequests();
             } catch (error) {
               console.error('Error completing ride:', error);
               Alert.alert('Error', 'Failed to complete ride');
@@ -226,7 +234,7 @@ export default function DriverHome() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Ride Requests</Text>
-            <TouchableOpacity onPress={loadPendingRides} style={styles.refreshButton}>
+            <TouchableOpacity onPress={loadDriverRideRequests} style={styles.refreshButton}>
               <Ionicons name="refresh" size={20} color={Theme.colors.primary[500]} />
             </TouchableOpacity>
           </View>
@@ -235,28 +243,28 @@ export default function DriverHome() {
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>Loading ride requests...</Text>
             </View>
-          ) : pendingRides.length === 0 ? (
+          ) : pendingRideRequests.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="car-outline" size={48} color={Theme.colors.text.tertiary} />
               <Text style={styles.emptyStateTitle}>No ride requests</Text>
               <Text style={styles.emptyStateText}>
-                Riders will appear here when they request rides.
+                You'll receive ride requests here when riders book rides in your area.
               </Text>
             </View>
           ) : (
-            pendingRides.map((ride) => (
-              <View key={ride.id} style={styles.rideCard}>
+            pendingRideRequests.map((rideRequest) => (
+              <View key={rideRequest.id} style={styles.rideCard}>
                 <View style={styles.rideHeader}>
                   <View style={styles.riderInfo}>
                     <Ionicons name="person-circle" size={40} color={Theme.colors.primary[500]} />
                     <View style={styles.riderDetails}>
-                      <Text style={styles.riderName}>{ride.riderName}</Text>
-                      <Text style={styles.eventName}>{ride.event}</Text>
+                      <Text style={styles.riderName}>{rideRequest.riderName}</Text>
+                      <Text style={styles.eventName}>{rideRequest.event}</Text>
                     </View>
                   </View>
                   <View style={styles.rideTime}>
                     <Text style={styles.timeText}>
-                      {new Date(ride.requestedAt).toLocaleTimeString([], { 
+                      {new Date(rideRequest.createdAt).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })}
@@ -267,16 +275,16 @@ export default function DriverHome() {
                 <View style={styles.rideDetails}>
                   <View style={styles.detailRow}>
                     <Ionicons name="people-outline" size={16} color={Theme.colors.text.secondary} />
-                    <Text style={styles.detailText}>{ride.passengers} passenger{ride.passengers !== 1 ? 's' : ''}</Text>
+                    <Text style={styles.detailText}>{rideRequest.passengers} passenger{rideRequest.passengers !== 1 ? 's' : ''}</Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Ionicons name="location-outline" size={16} color={Theme.colors.text.secondary} />
-                    <Text style={styles.detailText}>{ride.address}</Text>
+                    <Text style={styles.detailText}>{rideRequest.address}</Text>
                   </View>
-                  {ride.additionalDetails && (
+                  {rideRequest.additionalDetails && (
                     <View style={styles.detailRow}>
                       <Ionicons name="chatbubble-outline" size={16} color={Theme.colors.text.secondary} />
-                      <Text style={styles.detailText}>{ride.additionalDetails}</Text>
+                      <Text style={styles.detailText}>{rideRequest.additionalDetails}</Text>
                     </View>
                   )}
                 </View>
@@ -284,7 +292,7 @@ export default function DriverHome() {
                 <View style={styles.rideActions}>
                   <TouchableOpacity 
                     style={[styles.actionButton, styles.declineButton]}
-                    onPress={() => handleDeclineRide(ride)}
+                    onPress={() => handleDeclineRide(rideRequest)}
                   >
                     <Ionicons name="close" size={20} color={Theme.colors.status.error} />
                     <Text style={styles.declineButtonText}>Decline</Text>
@@ -292,7 +300,7 @@ export default function DriverHome() {
                   
                   <TouchableOpacity 
                     style={[styles.actionButton, styles.acceptButton]}
-                    onPress={() => handleAcceptRide(ride)}
+                    onPress={() => handleAcceptRide(rideRequest)}
                   >
                     <Ionicons name="checkmark" size={20} color={Theme.colors.text.primary} />
                     <Text style={styles.acceptButtonText}>Accept</Text>

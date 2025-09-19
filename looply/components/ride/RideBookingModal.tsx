@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
-import { userUtils, rideUtils, SavedAddress } from '@/lib/firebaseUtils';
+import { userUtils, rideUtils, rideMatchingService, SavedAddress } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { Theme } from '@/constants/Theme';
 
@@ -101,8 +101,19 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
       Alert.alert('Error', 'Please select an event');
       return;
     }
+    if (savedAddresses.length === 0) {
+      Alert.alert(
+        'No Saved Addresses',
+        'You need to save an address in your profile before booking a ride. Please go to your Profile tab and add a saved address.',
+        [
+          { text: 'OK' },
+          { text: 'Go to Profile', onPress: () => onClose() }
+        ]
+      );
+      return;
+    }
     if (!rideRequest.address.trim()) {
-      Alert.alert('Error', 'Please enter your address');
+      Alert.alert('Error', 'Please select an address from your saved addresses');
       return;
     }
     if (!rideRequest.pickupRequired && !rideRequest.dropoffRequired) {
@@ -124,19 +135,17 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
 
     setLoading(true);
     try {
-      const rideData = {
-        riderId: user.uid,
-        riderName: `${userProfile.firstName} ${userProfile.lastName}`,
-        event: rideRequest.event,
-        passengers: rideRequest.passengers,
-        address: rideRequest.address.trim(),
-        pickupRequired: rideRequest.pickupRequired,
-        dropoffRequired: rideRequest.dropoffRequired,
-        additionalDetails: rideRequest.additionalDetails.trim(),
-        status: 'pending' as const,
-      };
-
-      await rideUtils.createRideRequest(rideData);
+      // Use the new matching service instead of just creating a ride
+      const result = await rideMatchingService.bookRide(
+        user.uid,
+        `${userProfile.firstName} ${userProfile.lastName}`,
+        rideRequest.event,
+        rideRequest.passengers,
+        rideRequest.address.trim(),
+        rideRequest.pickupRequired,
+        rideRequest.dropoffRequired,
+        rideRequest.additionalDetails.trim()
+      );
       
       // Reset form first
       setRideRequest({
@@ -151,12 +160,26 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
       // Close modal
       onClose();
       
-      // Show success message
-      Alert.alert(
-        'Ride Requested!',
-        'We\'ll notify you when we find a driver for this event.',
-        [{ text: 'OK' }]
-      );
+      // Show success message based on matching result
+      if (result.status === 'matched') {
+        Alert.alert(
+          'Ride Matched!',
+          'Great! We found a driver for your ride. Check your activity for details.',
+          [{ text: 'OK' }]
+        );
+      } else if (result.status === 'no_match') {
+        Alert.alert(
+          'No Drivers Available',
+          'Sorry, we couldn\'t find any available drivers in your area right now. Please try again later.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Ride Requested!',
+          'We\'re looking for a driver for your ride. You\'ll be notified when we find one.',
+          [{ text: 'OK' }]
+        );
+      }
 
       // Trigger refresh of activity screen
       triggerRefresh();
@@ -232,9 +255,9 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
           {/* Address Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Address *</Text>
-            {savedAddresses.length > 0 && (
+            {savedAddresses.length > 0 ? (
               <View style={styles.savedAddressesContainer}>
-                <Text style={styles.savedAddressesTitle}>Saved Addresses</Text>
+                <Text style={styles.savedAddressesTitle}>Select from Saved Addresses</Text>
                 {savedAddresses.map((address) => (
                   <TouchableOpacity
                     key={address.id}
@@ -249,21 +272,23 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
                       <Text style={styles.savedAddressText}>{address.address}</Text>
                     </View>
                     {rideRequest.address === address.address && (
-                      <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />
+                      <Ionicons name="checkmark-circle" size={20} color={Theme.colors.primary[500]} />
                     )}
                   </TouchableOpacity>
                 ))}
               </View>
+            ) : (
+              <View style={styles.noAddressesContainer}>
+                <Ionicons name="location-outline" size={48} color={Theme.colors.text.tertiary} />
+                <Text style={styles.noAddressesTitle}>No Saved Addresses</Text>
+                <Text style={styles.noAddressesText}>
+                  You need to save an address in your profile before booking a ride.
+                </Text>
+                <Text style={styles.noAddressesSubtext}>
+                  Go to your Profile tab and add a saved address to continue.
+                </Text>
+              </View>
             )}
-            
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter your address"
-              value={rideRequest.address}
-              onChangeText={(text) => setRideRequest(prev => ({ ...prev, address: text }))}
-              multiline
-              numberOfLines={2}
-            />
           </View>
 
           {/* Passenger Count */}
@@ -376,12 +401,15 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.requestButton, loading && styles.requestButtonDisabled]}
+            style={[
+              styles.requestButton, 
+              (loading || savedAddresses.length === 0) && styles.requestButtonDisabled
+            ]}
             onPress={handleRequestRide}
-            disabled={loading}
+            disabled={loading || savedAddresses.length === 0}
           >
             <Text style={styles.requestButtonText}>
-              {loading ? 'Requesting...' : 'Request Ride'}
+              {loading ? 'Requesting...' : savedAddresses.length === 0 ? 'Add Address First' : 'Request Ride'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -393,56 +421,56 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Theme.colors.dark.background,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: Theme.colors.dark.border,
   },
   modalCloseButton: {
-    padding: 4,
+    padding: Theme.spacing.xs,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
   },
   modalPlaceholder: {
     width: 32,
   },
   modalContent: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: Theme.spacing.xl,
   },
   inputGroup: {
-    marginTop: 20,
+    marginTop: Theme.spacing.xl,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 12,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.md,
   },
   eventOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.lg,
+    marginBottom: Theme.spacing.sm,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.colors.dark.border,
   },
   eventOptionSelected: {
-    backgroundColor: '#EBF8FF',
-    borderColor: '#3B82F6',
+    backgroundColor: Theme.colors.dark.surfaceElevated,
+    borderColor: Theme.colors.primary[500],
   },
   eventOptionContent: {
     flexDirection: 'row',
@@ -450,61 +478,61 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventOptionText: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   eventOptionTextSelected: {
-    color: '#3B82F6',
-    fontWeight: '500',
+    color: Theme.colors.primary[500],
+    fontWeight: Theme.typography.fontWeight.medium,
   },
   savedAddressesContainer: {
-    marginBottom: 12,
+    marginBottom: Theme.spacing.md,
   },
   savedAddressesTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.secondary,
+    marginBottom: Theme.spacing.sm,
   },
   savedAddressOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 4,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 6,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.md,
+    marginBottom: Theme.spacing.xs,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.colors.dark.border,
   },
   savedAddressOptionSelected: {
-    backgroundColor: '#EBF8FF',
-    borderColor: '#3B82F6',
+    backgroundColor: Theme.colors.dark.surfaceElevated,
+    borderColor: Theme.colors.primary[500],
   },
   savedAddressContent: {
     flex: 1,
   },
   savedAddressLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
   },
   savedAddressText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+    fontSize: Theme.typography.fontSize.xs,
+    color: Theme.colors.text.secondary,
+    marginTop: Theme.spacing.xs,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    borderColor: Theme.colors.dark.border,
+    borderRadius: Theme.borderRadius.lg,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.text.primary,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
   },
   textArea: {
     height: 80,
@@ -513,25 +541,27 @@ const styles = StyleSheet.create({
   passengerCounter: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.lg,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: Theme.colors.dark.border,
   },
   counterButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: Theme.colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   counterText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginHorizontal: 16,
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginHorizontal: Theme.spacing.lg,
     minWidth: 24,
     textAlign: 'center',
   },
@@ -539,17 +569,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.lg,
+    marginBottom: Theme.spacing.sm,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.colors.dark.border,
   },
   serviceOptionSelected: {
-    backgroundColor: '#EBF8FF',
-    borderColor: '#3B82F6',
+    backgroundColor: Theme.colors.dark.surfaceElevated,
+    borderColor: Theme.colors.primary[500],
   },
   serviceOptionContent: {
     flexDirection: 'row',
@@ -557,78 +587,109 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   serviceOptionText: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.sm,
   },
   serviceOptionTextSelected: {
-    color: '#3B82F6',
-    fontWeight: '500',
+    color: Theme.colors.primary[500],
+    fontWeight: Theme.typography.fontWeight.medium,
   },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: Theme.borderRadius.sm,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: Theme.colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxSelected: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: Theme.colors.primary[500],
+    borderColor: Theme.colors.primary[500],
   },
   modalFooter: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    gap: 12,
+    borderTopColor: Theme.colors.dark.border,
+    gap: Theme.spacing.md,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Theme.colors.dark.border,
     alignItems: 'center',
+    backgroundColor: Theme.colors.dark.surfaceVariant,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.secondary,
   },
   requestButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#3B82F6',
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: Theme.colors.primary[500],
     alignItems: 'center',
   },
   requestButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: Theme.colors.text.disabled,
   },
   requestButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
   },
   // Offline warning styles
   offlineWarning: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderColor: Theme.colors.status.error,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.md,
+    marginBottom: Theme.spacing.lg,
   },
   offlineText: {
     flex: 1,
-    fontSize: 14,
-    color: '#DC2626',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.status.error,
+    marginLeft: Theme.spacing.sm,
+  },
+  // No addresses styles
+  noAddressesContainer: {
+    alignItems: 'center',
+    paddingVertical: Theme.spacing['2xl'],
+    paddingHorizontal: Theme.spacing.lg,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Theme.colors.dark.border,
+  },
+  noAddressesTitle: {
+    fontSize: Theme.typography.fontSize.lg,
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    color: Theme.colors.text.primary,
+    marginTop: Theme.spacing.md,
+    marginBottom: Theme.spacing.sm,
+  },
+  noAddressesText: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: Theme.typography.lineHeight.relaxed * Theme.typography.fontSize.base,
+    marginBottom: Theme.spacing.sm,
+  },
+  noAddressesSubtext: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
   },
 });

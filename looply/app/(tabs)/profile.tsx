@@ -8,7 +8,10 @@ import { useRouter } from 'expo-router';
 import { userUtils, SavedAddress, driverUtils } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import DriverRegistrationModal from '@/components/DriverRegistrationModal';
+import DriverSeatsAdjustment from '@/components/DriverSeatsAdjustment';
+import AddAddressModal from '@/components/AddAddressModal';
 import { Theme } from '@/constants/Theme';
+import { TurboModuleRegistry } from "react-native";
 
 // SavedAddress interface is now imported from firebaseUtils
 
@@ -20,9 +23,10 @@ export default function RiderProfileScreen() {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [newAddress, setNewAddress] = useState({ label: '', address: '' });
-  const [isDriverAvailable, setIsDriverAvailable] = useState(false);
+  const [isDriverAvailable, setIsDriverAvailable] = useState(true);
   const [showDriverRegistration, setShowDriverRegistration] = useState(false);
   const [hasDriverProfile, setHasDriverProfile] = useState(false);
+  const [driverProfile, setDriverProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -36,8 +40,9 @@ export default function RiderProfileScreen() {
     if (!user) return;
     
     try {
-      const driverProfile = await driverUtils.getDriverProfile(user.uid);
-      setHasDriverProfile(!!driverProfile);
+      const profile = await driverUtils.getDriverProfile(user.uid);
+      setHasDriverProfile(!!profile);
+      setDriverProfile(profile);
     } catch (error) {
       console.error('Error checking driver profile:', error);
     }
@@ -50,7 +55,7 @@ export default function RiderProfileScreen() {
       const userProfile = await userUtils.getUserProfile(user.uid);
       if (userProfile) {
         setSavedAddresses(userProfile.savedAddresses || []);
-        setIsDriverAvailable(userProfile.isDriverAvailable || false);
+        setIsDriverAvailable(userProfile.isDriverAvailable || true);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -63,7 +68,7 @@ export default function RiderProfileScreen() {
     try {
       const userProfile = await userUtils.getUserProfile(user.uid);
       if (userProfile) {
-        setIsDriverAvailable(userProfile.isDriverAvailable || false);
+        setIsDriverAvailable(userProfile.isDriverAvailable || true);
       }
     } catch (error) {
       console.error('Error loading driver availability:', error);
@@ -206,7 +211,7 @@ export default function RiderProfileScreen() {
       const newAvailability = !isDriverAvailable;
       // Update both Firestore and AuthContext state
       await updateUserProfile({ isDriverAvailable: newAvailability });
-      setIsDriverAvailable(newAvailability);
+      setIsDriverAvailable(true);
     } catch (error) {
       console.error('Error updating driver availability:', error);
       Alert.alert('Error', 'Failed to update availability');
@@ -278,7 +283,7 @@ export default function RiderProfileScreen() {
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <Text style={styles.name}>
-              Hi there, {userProfile ? `${userProfile.firstName} 👋` : user?.displayName || 'User'}
+              {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.displayName || 'User'}
             </Text>
             <Image
               source={{ uri: "https://i.pravatar.cc/150?img=1" }}
@@ -355,8 +360,19 @@ export default function RiderProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Driver Seats Adjustment (only when user has driver profile and is in driver mode) */}
+        {hasDriverProfile && driverProfile && userProfile?.lastActiveAs === 'driver' && (
+          <DriverSeatsAdjustment
+            driverProfile={driverProfile}
+            onSeatsUpdated={() => {
+              checkDriverProfile(); // Refresh driver profile data
+              loadDriverAvailability(); // Refresh availability status
+            }}
+          />
+        )}
+
         {/* Driver Availability Toggle (only when in driver mode) */}
-        {(userProfile?.lastActiveAs === 'driver') && (
+        {/* {(userProfile?.lastActiveAs === 'driver') && (
           <View style={styles.card}>
             <View style={styles.availabilityRow}>
               <View style={styles.availabilityInfo}>
@@ -376,7 +392,7 @@ export default function RiderProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        )}
+        )} */}
 
         {/* Switch Role Button */}
         <View style={styles.menuContainer}>
@@ -432,63 +448,15 @@ export default function RiderProfileScreen() {
       </ScrollView>
 
       {/* Add Address Modal */}
-      <Modal
+      <AddAddressModal
         visible={showAddressModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setShowAddressModal(false)}
-              style={styles.modalCloseButton}
-            >
-              <Ionicons name="close" size={24} color="#374151" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Address</Text>
-            <View style={styles.modalPlaceholder} />
-          </View>
-
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Label (e.g., Home, Work)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter a label for this address"
-                value={newAddress.label}
-                onChangeText={(text) => setNewAddress(prev => ({ ...prev, label: text }))}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Address</Text>
-              <TextInput
-                style={[styles.textInput, styles.textArea]}
-                placeholder="Enter the full address"
-                value={newAddress.address}
-                onChangeText={(text) => setNewAddress(prev => ({ ...prev, address: text }))}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-          </ScrollView>
-
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowAddressModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={saveAddress}
-            >
-              <Text style={styles.saveButtonText}>Save Address</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
+        onClose={() => setShowAddressModal(false)}
+        onSuccess={() => {
+          setShowAddressModal(false);
+          loadSavedAddresses();
+        }}
+        isForDriver={false}
+      />
 
       {/* Driver Registration Modal */}
       <DriverRegistrationModal

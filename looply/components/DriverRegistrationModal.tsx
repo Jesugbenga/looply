@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,8 +11,9 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { driverUtils, DriverProfile } from '@/lib/firebaseUtils';
+import { driverUtils, DriverProfile, userUtils } from '@/lib/firebaseUtils';
 import { useAuth } from '@/contexts/AuthContext';
+import AddAddressModal from './AddAddressModal';
 
 interface DriverRegistrationModalProps {
   visible: boolean;
@@ -23,6 +24,8 @@ interface DriverRegistrationModalProps {
 export default function DriverRegistrationModal({ visible, onClose, onSuccess }: DriverRegistrationModalProps) {
   const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [hasAddress, setHasAddress] = useState(false);
   const [formData, setFormData] = useState({
     licenseNumber: '',
     licenseExpiry: '',
@@ -38,6 +41,26 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Check if user has saved addresses when modal opens
+  useEffect(() => {
+    if (visible && user) {
+      checkUserAddresses();
+    }
+  }, [visible, user]);
+
+  const checkUserAddresses = async () => {
+    if (!user) return;
+    
+    try {
+      const userProfile = await userUtils.getUserProfile(user.uid);
+      const hasSavedAddresses = userProfile?.savedAddresses && userProfile.savedAddresses.length > 0;
+      setHasAddress(!!hasSavedAddresses);
+    } catch (error) {
+      console.error('Error checking user addresses:', error);
+      setHasAddress(false);
+    }
   };
 
   const validateForm = () => {
@@ -97,6 +120,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
         licensePlate: formData.licensePlate.trim().toUpperCase(),
         vehicleType: formData.vehicleType,
         seats: parseInt(formData.seats),
+        availableSeats: parseInt(formData.seats), // Initialize with total seats
         isVerified: false, // Will be verified later by admin
         isAvailable: false,
         totalEarnings: 0,
@@ -166,6 +190,36 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
                 keyboardType="phone-pad"
               />
             </View>
+          </View>
+
+          {/* Driver Location */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Driver Location</Text>
+            <Text style={styles.sectionDescription}>
+              Set your current location for ride matching. This will be used to find nearby riders.
+            </Text>
+            
+            {hasAddress ? (
+              <View style={styles.addressStatus}>
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Text style={styles.addressStatusText}>
+                  You have saved addresses. Your default address will be used as your driver location.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.addressPrompt}>
+                <Ionicons name="location-outline" size={20} color="#6B7280" />
+                <Text style={styles.addressPromptText}>
+                  You need to add an address to set your driver location.
+                </Text>
+                <TouchableOpacity
+                  style={styles.addAddressButton}
+                  onPress={() => setShowAddressModal(true)}
+                >
+                  <Text style={styles.addAddressButtonText}>Add Address</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* License Information */}
@@ -313,6 +367,17 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Add Address Modal */}
+        <AddAddressModal
+          visible={showAddressModal}
+          onClose={() => setShowAddressModal(false)}
+          onSuccess={() => {
+            setShowAddressModal(false);
+            checkUserAddresses();
+          }}
+          isForDriver={true}
+        />
       </SafeAreaView>
     </Modal>
   );
@@ -362,6 +427,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
     marginBottom: 16,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  addressStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  addressStatusText: {
+    fontSize: 14,
+    color: '#166534',
+    marginLeft: 8,
+    flex: 1,
+  },
+  addressPrompt: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  addressPromptText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  addAddressButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  addAddressButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
   inputGroup: {
     marginBottom: 16,
