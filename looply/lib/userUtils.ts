@@ -170,4 +170,15 @@ export const userUtils = {
       return null;
     }
   },
+
+  // Update OneSignal user ID
+  async updateOneSignalUserId(uid: string, oneSignalUserId: string): Promise<void> {
+    try {
+      await this.updateUserProfile(uid, { oneSignalUserId });
+      console.log('✅ OneSignal user ID updated for user:', uid);
+    } catch (error) {
+      console.error('Error updating OneSignal user ID:', error);
+      throw error;
+    }
+  },
 };

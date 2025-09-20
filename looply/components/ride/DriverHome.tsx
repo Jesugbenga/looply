@@ -6,17 +6,20 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert,
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
+import { useAlert } from '@/contexts/AlertContext';
 import { rideUtils, Ride, driverUtils, DriverProfile, rideMatchingService } from '@/lib/firebaseUtils';
+import { notificationService } from '@/lib/notificationService';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import NotificationButton from '../NotificationButton';
 import { Theme } from '@/constants/Theme';
 
 export default function DriverHome() {
   const { user, userProfile } = useAuth();
+  const { showError, showSuccess, showInfo } = useAlert();
   const { isOnline } = useConnectionStatus();
   const [pendingRideRequests, setPendingRideRequests] = useState<any[]>([]);
   const [activeRides, setActiveRides] = useState<Ride[]>([]);
@@ -57,17 +60,17 @@ export default function DriverHome() {
       
       // Get ride requests specifically sent to this driver
       const rideRequests = await rideMatchingService.getDriverRideRequests(profile.id);
-      console.log(`📋 Found ${rideRequests.length} ride requests for driver ${profile.id}`);
       
       // No need to filter out own requests since matching prevents same person from being selected
       setPendingRideRequests(rideRequests);
       
       // Also fetch current driver's active rides (matched/in-progress)
       const myRides = await rideUtils.getUserRides(user.uid, 'driver');
-      setActiveRides(myRides.filter(r => r.status === 'matched' || r.status === 'in-progress'));
+      const activeRides = myRides.filter(r => r.status === 'matched' || r.status === 'in-progress');
+      setActiveRides(activeRides);
     } catch (error) {
       console.error('Error loading driver ride requests:', error);
-      Alert.alert('Error', 'Failed to load ride requests');
+      showError('Error', 'Failed to load ride requests');
     } finally {
       setLoading(false);
     }
@@ -82,97 +85,203 @@ export default function DriverHome() {
   const handleAcceptRide = async (rideRequest: any) => {
     if (!user || !userProfile || !driverProfile) return;
 
-    Alert.alert(
+    showInfo(
       'Accept Ride Request',
       `Accept ride request from ${rideRequest.riderName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: async () => {
-            try {
-              // Use the new ride matching service to accept the ride
-              await rideMatchingService.driverAcceptRide(driverProfile.id, rideRequest.rideId);
-              Alert.alert('Success', 'Ride request accepted!');
-              await loadDriverRideRequests(); // Refresh the list
-            } catch (error) {
-              console.error('Error accepting ride:', error);
-              Alert.alert('Error', 'Failed to accept ride request');
+      {
+        actionText: 'Accept',
+        onAction: async () => {
+          try {
+            // Use the new ride matching service to accept the ride
+            await rideMatchingService.driverAcceptRide(driverProfile.id, rideRequest.rideId);
+            await loadDriverRideRequests(); // Refresh the list
+          } catch (error) {
+            console.error('Error accepting ride:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Accept Failed',
+                'Failed to accept ride request',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
             }
-          },
+          }
         },
-      ]
+        autoHide: false,
+      }
     );
   };
 
   const handleDeclineRide = async (rideRequest: any) => {
     if (!driverProfile) return;
 
-    Alert.alert(
+    showError(
       'Decline Ride Request',
       `Decline ride request from ${rideRequest.riderName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Decline',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Use the new ride matching service to decline the ride
-              await rideMatchingService.driverDeclineRide(driverProfile.id, rideRequest.rideId);
-              Alert.alert('Success', 'Ride request declined');
-              await loadDriverRideRequests(); // Refresh the list
-            } catch (error) {
-              console.error('Error declining ride:', error);
-              Alert.alert('Error', 'Failed to decline ride request');
+      {
+        actionText: 'Decline',
+        onAction: async () => {
+          try {
+            // Use the new ride matching service to decline the ride
+            await rideMatchingService.driverDeclineRide(driverProfile.id, rideRequest.rideId);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Ride Declined',
+                'You have declined the ride request',
+                {
+                  type: 'system_alert',
+                  rideId: rideRequest.rideId,
+                  action: 'view_requests'
+                }
+              );
             }
-          },
+            await loadDriverRideRequests(); // Refresh the list
+          } catch (error) {
+            console.error('Error declining ride:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Decline Failed',
+                'Failed to decline ride request',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
+            }
+          }
         },
-      ]
+        autoHide: false,
+      }
     );
   };
 
   const handleStartRide = async (ride: Ride) => {
-    Alert.alert(
+    showInfo(
       'Start Ride',
       'Start this ride now?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start',
-          onPress: async () => {
-            try {
-              await rideUtils.startRide(ride.id);
-              await loadDriverRideRequests();
-            } catch (error) {
-              console.error('Error starting ride:', error);
-              Alert.alert('Error', 'Failed to start ride');
+      {
+        actionText: 'Start',
+        onAction: async () => {
+          try {
+            await rideUtils.startRide(ride.id);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Ride Started!',
+                'The ride has been started successfully',
+                {
+                  type: 'ride_started',
+                  rideId: ride.id,
+                  action: 'view_ride'
+                }
+              );
             }
-          },
+            await loadDriverRideRequests();
+          } catch (error) {
+            console.error('Error starting ride:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Start Failed',
+                'Failed to start ride',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
+            }
+          }
         },
-      ]
+        autoHide: false,
+      }
     );
   };
 
   const handleCompleteRide = async (ride: Ride) => {
-    Alert.alert(
+    showInfo(
       'Complete Ride',
       'Mark this ride as completed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Complete',
-          onPress: async () => {
-            try {
-              await rideUtils.completeRide(ride.id);
-              await loadDriverRideRequests();
-            } catch (error) {
-              console.error('Error completing ride:', error);
-              Alert.alert('Error', 'Failed to complete ride');
+      {
+        actionText: 'Complete',
+        onAction: async () => {
+          try {
+            await rideUtils.completeRide(ride.id);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Ride Completed!',
+                'The ride has been completed successfully',
+                {
+                  type: 'ride_completed',
+                  rideId: ride.id,
+                  action: 'view_ride'
+                }
+              );
             }
-          },
+            await loadDriverRideRequests();
+          } catch (error) {
+            console.error('Error completing ride:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Complete Failed',
+                'Failed to complete ride',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
+            }
+          }
         },
-      ]
+        autoHide: false,
+      }
+    );
+  };
+
+  const handleNotifyArrived = async (ride: Ride) => {
+    showInfo(
+      'Notify Arrival',
+      'Notify the rider that you have arrived?',
+      {
+        actionText: 'Notify',
+        onAction: async () => {
+          try {
+            await rideUtils.notifyDriverArrived(ride.id);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Rider Notified!',
+                'The rider has been notified of your arrival',
+                {
+                  type: 'ride_arrived',
+                  rideId: ride.id,
+                  action: 'view_ride'
+                }
+              );
+            }
+          } catch (error) {
+            console.error('Error notifying arrival:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Notify Failed',
+                'Failed to notify rider of arrival',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
+            }
+          }
+        },
+        autoHide: false,
+      }
     );
   };
 
@@ -203,9 +312,7 @@ export default function DriverHome() {
               {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'Driver'}
             </Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color={Theme.colors.text.tertiary} />
-          </TouchableOpacity>
+          <NotificationButton />
         </View>
 
         {/* Driver Status Card */}
@@ -356,13 +463,22 @@ export default function DriverHome() {
                     </TouchableOpacity>
                   )}
                   {ride.status === 'in-progress' && (
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.acceptButton]}
-                      onPress={() => handleCompleteRide(ride)}
-                    >
-                      <Ionicons name="checkmark-done" size={20} color={Theme.colors.text.primary} />
-                      <Text style={styles.acceptButtonText}>Complete Ride</Text>
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity 
+                        style={[styles.actionButton, styles.notifyButton]}
+                        onPress={() => handleNotifyArrived(ride)}
+                      >
+                        <Ionicons name="location" size={20} color={Theme.colors.text.primary} />
+                        <Text style={styles.notifyButtonText}>I've Arrived</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.actionButton, styles.acceptButton]}
+                        onPress={() => handleCompleteRide(ride)}
+                      >
+                        <Ionicons name="checkmark-done" size={20} color={Theme.colors.text.primary} />
+                        <Text style={styles.acceptButtonText}>Complete Ride</Text>
+                      </TouchableOpacity>
+                    </>
                   )}
                 </View>
               </View>
@@ -599,6 +715,15 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.primary[500],
   },
   acceptButtonText: {
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.primary,
+    marginLeft: Theme.spacing.xs,
+  },
+  notifyButton: {
+    backgroundColor: Theme.colors.accent.blue,
+  },
+  notifyButtonText: {
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.medium,
     color: Theme.colors.text.primary,

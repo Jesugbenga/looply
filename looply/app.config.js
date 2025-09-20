@@ -20,6 +20,8 @@ module.exports = () => {
         EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
         EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+        oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID,
+        oneSignalRestApiKey: process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY,
       },
     },
   };

@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Ride } from './types';
+import { notificationService } from './notificationService';
 
 export const rideUtils = {
   // Create a new ride request
@@ -34,12 +35,31 @@ export const rideUtils = {
   async getUserRides(uid: string, userType: 'rider' | 'driver'): Promise<Ride[]> {
     try {
       const ridesCollection = collection(db, 'rides');
-      const field = userType === 'rider' ? 'riderId' : 'driverId';
-      const q = query(ridesCollection, where(field, '==', uid));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
+      
+      if (userType === 'rider') {
+        // For riders, use the Firebase UID directly
+        const q = query(ridesCollection, where('riderId', '==', uid));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
+      } else {
+        // For drivers, we need to get the driver profile ID first
+        const { driverUtils } = await import('./driverUtils');
+        const driverProfile = await driverUtils.getDriverProfile(uid);
+        
+        if (!driverProfile) {
+          console.log('No driver profile found for user:', uid);
+          return [];
+        }
+        
+        // Query using the driver profile ID
+        const q = query(ridesCollection, where('driverId', '==', driverProfile.id));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')) as Ride[];
+      }
     } catch (error) {
       console.error('Error getting user rides:', error);
       throw error;
@@ -118,6 +138,17 @@ export const rideUtils = {
   async startRide(rideId: string): Promise<void> {
     try {
       await this.updateRideStatus(rideId, 'in-progress');
+      
+      // Send notification to rider that ride has started
+      try {
+        const rideDoc = await getDoc(doc(db, 'rides', rideId));
+        if (rideDoc.exists()) {
+          const ride = { id: rideId, ...rideDoc.data() } as Ride;
+          await notificationService.notifyRiderStarted(ride);
+        }
+      } catch (error) {
+        console.error('Error sending ride started notification:', error);
+      }
     } catch (error) {
       console.error('Error starting ride:', error);
       throw error;
@@ -128,6 +159,25 @@ export const rideUtils = {
   async completeRide(rideId: string): Promise<void> {
     try {
       await this.updateRideStatus(rideId, 'completed');
+      
+      // Send notification to both rider and driver that ride is completed
+      try {
+        const rideDoc = await getDoc(doc(db, 'rides', rideId));
+        if (rideDoc.exists()) {
+          const ride = { id: rideId, ...rideDoc.data() } as Ride;
+          await notificationService.notifyRideCompleted(ride);
+          
+          // Check for milestone notifications
+          if (ride.riderId) {
+            await notificationService.checkAndSendMilestoneNotifications(ride.riderId, 'rider');
+          }
+          if (ride.driverId) {
+            await notificationService.checkAndSendMilestoneNotifications(ride.driverId, 'driver');
+          }
+        }
+      } catch (error) {
+        console.error('Error sending ride completed notification:', error);
+      }
     } catch (error) {
       console.error('Error completing ride:', error);
       throw error;
@@ -140,6 +190,20 @@ export const rideUtils = {
       await this.updateRideStatus(rideId, 'cancelled');
     } catch (error) {
       console.error('Error cancelling ride:', error);
+      throw error;
+    }
+  },
+
+  // Notify rider that driver has arrived
+  async notifyDriverArrived(rideId: string): Promise<void> {
+    try {
+      const rideDoc = await getDoc(doc(db, 'rides', rideId));
+      if (rideDoc.exists()) {
+        const ride = { id: rideId, ...rideDoc.data() } as Ride;
+        await notificationService.notifyRiderArrived(ride);
+      }
+    } catch (error) {
+      console.error('Error sending driver arrived notification:', error);
       throw error;
     }
   },

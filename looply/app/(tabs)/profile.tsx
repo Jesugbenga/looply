@@ -4,8 +4,9 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
+import { useAlert } from '@/contexts/AlertContext';
 import { useRouter } from 'expo-router';
-import { userUtils, SavedAddress, driverUtils } from '@/lib/firebaseUtils';
+import { userUtils, SavedAddress, driverUtils, rideUtils } from '@/lib/firebaseUtils';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import DriverRegistrationModal from '@/components/DriverRegistrationModal';
 import DriverSeatsAdjustment from '@/components/DriverSeatsAdjustment';
@@ -18,6 +19,7 @@ import { TurboModuleRegistry } from "react-native";
 export default function RiderProfileScreen() {
   const { user, userProfile, logout, switchUserRole, updateUserProfile } = useAuth();
   const { triggerRefresh } = useRefresh();
+  const { showSuccess, showError } = useAlert();
   const router = useRouter();
   const { isOnline, isConnecting, retryConnection } = useConnectionStatus();
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -27,12 +29,19 @@ export default function RiderProfileScreen() {
   const [showDriverRegistration, setShowDriverRegistration] = useState(false);
   const [hasDriverProfile, setHasDriverProfile] = useState(false);
   const [driverProfile, setDriverProfile] = useState<any>(null);
+  const [rideStats, setRideStats] = useState({
+    totalRides: 0,
+    totalDrives: 0,
+    nextRiderMilestone: 5,
+    nextDriverMilestone: 5,
+  });
 
   useEffect(() => {
     if (user) {
       loadSavedAddresses();
       loadDriverAvailability();
       checkDriverProfile();
+      loadRideStats();
     }
   }, [user]);
 
@@ -72,6 +81,36 @@ export default function RiderProfileScreen() {
       }
     } catch (error) {
       console.error('Error loading driver availability:', error);
+    }
+  };
+
+  const loadRideStats = async () => {
+    if (!user) return;
+    
+    try {
+      // Get rider rides (completed rides as a rider)
+      const riderRides = await rideUtils.getUserRides(user.uid, 'rider');
+      const completedRiderRides = riderRides.filter(ride => ride.status === 'completed');
+      
+      // Get driver rides (completed rides as a driver)
+      const driverRides = await rideUtils.getUserRides(user.uid, 'driver');
+      const completedDriverRides = driverRides.filter(ride => ride.status === 'completed');
+      
+      // Calculate next milestones
+      const nextRiderMilestone = Math.ceil((completedRiderRides.length + 1) / 5) * 5;
+      const nextDriverMilestone = Math.ceil((completedDriverRides.length + 1) / 5) * 5;
+      
+      const stats = {
+        totalRides: completedRiderRides.length,
+        totalDrives: completedDriverRides.length,
+        nextRiderMilestone,
+        nextDriverMilestone,
+      };
+      
+      console.log('📊 [PROFILE] Ride statistics loaded:', stats);
+      setRideStats(stats);
+    } catch (error) {
+      console.error('❌ [PROFILE] Error loading ride statistics:', error);
     }
   };
 
@@ -245,13 +284,14 @@ export default function RiderProfileScreen() {
       }
       
       await switchUserRole('driver');
-      Alert.alert('Success', 'Switched to driver mode');
+      showSuccess('Success', 'Switched to driver mode');
       triggerRefresh(); // Refresh the UI
+      await loadRideStats(); // Refresh ride statistics
       // Navigate to Home so DriverHome is visible immediately
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Switch to driver error:', error);
-      Alert.alert('Error', error.message || 'Failed to switch to driver mode');
+      showError('Error', error.message || 'Failed to switch to driver mode');
     }
   };
 
@@ -260,13 +300,14 @@ export default function RiderProfileScreen() {
     
     try {
       await switchUserRole('rider');
-      Alert.alert('Success', 'Switched to rider mode');
+      showSuccess('Success', 'Switched to rider mode');
       triggerRefresh(); // Refresh the UI
+      await loadRideStats(); // Refresh ride statistics
       // Navigate to Home so RiderHome is visible immediately
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Switch to rider error:', error);
-      Alert.alert('Error', error.message || 'Failed to switch to rider mode');
+      showError('Error', error.message || 'Failed to switch to rider mode');
     }
   };
 
@@ -302,6 +343,38 @@ export default function RiderProfileScreen() {
             <Ionicons name="car-outline" size={24} color={Theme.colors.text.primary} />
             <Text style={styles.quickAccessText}>Trips</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Ride Statistics */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="stats-chart-outline" size={22} color={Theme.colors.text.primary} />
+            <Text style={styles.rowText}>Ride Statistics</Text>
+          </View>
+          
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="person-outline" size={20} color={Theme.colors.accent.blue} />
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statValue}>{rideStats.totalRides}</Text>
+                <Text style={styles.statLabel}>Rides Taken</Text>
+              </View>
+            </View>
+            
+            {(userProfile?.lastActiveAs === 'driver') && (
+              <View style={styles.statItem}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons name="car-outline" size={20} color={Theme.colors.status.success} />
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statValue}>{rideStats.totalDrives}</Text>
+                  <Text style={styles.statLabel}>Drives Given</Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Saved Addresses */}
@@ -413,7 +486,10 @@ export default function RiderProfileScreen() {
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/(tabs)/messages')}
+          >
             <Ionicons name="mail-outline" size={20} color={Theme.colors.text.primary} />
             <Text style={styles.menuText}>Messages</Text>
             <Ionicons name="chevron-forward-outline" size={16} color={Theme.colors.text.tertiary} />
@@ -831,4 +907,43 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FFFFFF',
   },
+  // Statistics styles
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: Theme.spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.sm,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderRadius: Theme.borderRadius.md,
+    marginHorizontal: Theme.spacing.xs,
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.colors.dark.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Theme.spacing.md,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statValue: {
+    fontSize: Theme.typography.fontSize['2xl'],
+    fontWeight: Theme.typography.fontWeight.bold,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.xs,
+  },
+  statLabel: {
+    fontSize: Theme.typography.fontSize.sm,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.text.secondary,
+    },
 });

@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { notificationService } from '@/lib/notificationService';
 
 interface UserProfile {
   uid: string;
@@ -20,6 +21,7 @@ interface UserProfile {
   isDriverAvailable: boolean;
   lastActiveAs: 'rider' | 'driver'; // Track last active role (not 'both')
   phone?: string;
+  oneSignalUserId?: string; // OneSignal user ID for push notifications
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +120,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ User profile created in Firestore:', userProfile);
       
       setUserProfile(userProfile);
+      
+      // Initialize OneSignal user ID for notifications
+      try {
+        await notificationService.initializeUserOneSignalId(user.uid);
+      } catch (error) {
+        console.warn('Failed to initialize OneSignal user ID:', error);
+      }
+      
       console.log('🎉 Sign-up completed successfully!');
     } catch (error) {
       console.error('❌ Sign up error:', error);
@@ -153,6 +163,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setUserProfile(userProfile);
+      
+      // Initialize OneSignal user ID for notifications
+      try {
+        await notificationService.initializeUserOneSignalId(user.uid);
+      } catch (error) {
+        console.warn('Failed to initialize OneSignal user ID:', error);
+      }
+      
       console.log('🎉 Sign-in completed successfully!');
     } catch (error) {
       console.error('❌ Sign in error:', error);

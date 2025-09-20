@@ -6,19 +6,22 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from '@/contexts/AuthContext';
+import { useAlert } from '@/contexts/AlertContext';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { rideUtils, Ride } from '@/lib/firebaseUtils';
+import { notificationService } from '@/lib/notificationService';
 import RideBookingModal from './RideBookingModal';
+import NotificationButton from '../NotificationButton';
 import { Theme } from '@/constants/Theme';
 
 interface RiderHomeProps {}
 
 export default function RiderHome({}: RiderHomeProps) {
   const { user, userProfile } = useAuth();
+  const { showError, showSuccess, showInfo } = useAlert();
   const { isOnline } = useConnectionStatus();
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
@@ -45,19 +48,18 @@ export default function RiderHome({}: RiderHomeProps) {
            ).slice(0, 2); // Show last 2 rides
            setPreviousRides(completed);
           
-          // Show notifications for status changes
-          if (active) {
-            if (active.status === 'matched') {
-              Alert.alert(
-                'Ride Accepted! 🎉',
-                `Your ride has been accepted by ${active.driverName}. They will contact you soon.`,
-                [{ text: 'OK' }]
-              );
-            } else if (active.status === 'cancelled') {
-              Alert.alert(
+          // Send notifications for status changes
+          if (active && user) {
+            if (active.status === 'cancelled') {
+              notificationService.sendNotificationToUser(
+                user.uid,
                 'Ride Declined',
                 'Unfortunately, your ride request was declined. Please try again.',
-                [{ text: 'OK' }]
+                {
+                  type: 'ride_declined',
+                  rideId: active.id,
+                  action: 'book_again'
+                }
               );
             }
           }
@@ -73,33 +75,50 @@ export default function RiderHome({}: RiderHomeProps) {
 
     // Check if ride can be cancelled
     if (ride.status === 'in-progress' || ride.status === 'completed') {
-      Alert.alert(
+      showError(
         'Cannot Cancel Ride',
-        'This ride cannot be cancelled as it is already in progress or completed.',
-        [{ text: 'OK' }]
+        'This ride cannot be cancelled as it is already in progress or completed.'
       );
       return;
     }
 
-    Alert.alert(
+    showError(
       'Cancel Ride',
       'Are you sure you want to cancel this ride request?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await rideUtils.cancelRide(ride.id);
-              Alert.alert('Success', 'Ride request cancelled');
-            } catch (error) {
-              console.error('Error cancelling ride:', error);
-              Alert.alert('Error', 'Failed to cancel ride request');
+      {
+        actionText: 'Yes, Cancel',
+        onAction: async () => {
+          try {
+            await rideUtils.cancelRide(ride.id);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Ride Cancelled',
+                'Your ride request has been cancelled',
+                {
+                  type: 'system_alert',
+                  rideId: ride.id,
+                  action: 'book_again'
+                }
+              );
             }
-          },
+          } catch (error) {
+            console.error('Error cancelling ride:', error);
+            if (user) {
+              await notificationService.sendNotificationToUser(
+                user.uid,
+                'Cancel Failed',
+                'Failed to cancel ride request',
+                {
+                  type: 'system_alert',
+                  action: 'try_again'
+                }
+              );
+            }
+          }
         },
-      ]
+        autoHide: false,
+      }
     );
   };
 
@@ -160,9 +179,7 @@ export default function RiderHome({}: RiderHomeProps) {
               {userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : user?.email}
             </Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color={Theme.colors.text.tertiary} />
-          </TouchableOpacity>
+          <NotificationButton />
         </View>
 
         {/* Active Ride Status */}
@@ -182,7 +199,7 @@ export default function RiderHome({}: RiderHomeProps) {
             </View>
             <Text style={styles.statusText}>
               {activeRide.status === 'pending' && 'Your ride request is being reviewed by drivers.'}
-              {activeRide.status === 'matched' && `Driver: ${activeRide.driverName} will contact you soon.`}
+              {activeRide.status === 'matched' && `Driver: ${activeRide.driverName || 'A driver'} will contact you soon.`}
               {activeRide.status === 'in-progress' && 'Your driver is on the way!'}
             </Text>
             {activeRide.verificationPin && (
@@ -414,7 +431,14 @@ const styles = StyleSheet.create({
   cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.xs,
+    paddingHorizontal: Theme.spacing.sm,
+    backgroundColor: Theme.colors.status.error + '20',
+    borderRadius: Theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: Theme.colors.status.error + '40',
   },
   cancelButtonText: {
     fontSize: Theme.typography.fontSize.sm,

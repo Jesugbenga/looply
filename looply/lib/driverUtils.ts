@@ -231,4 +231,18 @@ export const driverUtils = {
       throw error;
     }
   },
+
+  // Update OneSignal user ID for driver
+  async updateOneSignalUserId(driverId: string, oneSignalUserId: string): Promise<void> {
+    try {
+      const profile = await this.getDriverProfile(driverId);
+      if (profile) {
+        await this.updateDriverProfile(profile.id, { oneSignalUserId });
+        console.log('✅ OneSignal user ID updated for driver:', driverId);
+      }
+    } catch (error) {
+      console.error('Error updating OneSignal user ID for driver:', error);
+      throw error;
+    }
+  },
 };

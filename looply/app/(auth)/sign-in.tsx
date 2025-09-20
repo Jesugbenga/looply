@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,10 +14,12 @@ import { Ionicons } from '@expo/vector-icons';
 import OAuth from '../../components/OAuth';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAlert } from '@/contexts/AlertContext';
 import { Theme } from '@/constants/Theme';
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
+  const { showError, showSuccess } = useAlert();
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ export default function SignInScreen() {
 
   const onSignInPress = async () => {
     if (!emailAddress || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Missing Information', 'Please fill in all fields');
       return;
     }
 
@@ -36,7 +37,29 @@ export default function SignInScreen() {
       router.replace('/(tabs)');
     } catch (err: any) {
       console.log('Sign in error:', JSON.stringify(err, null, 2));
-      Alert.alert('Error', err.message || 'Failed to sign in');
+      
+      // Handle specific error types
+      let errorTitle = 'Sign In Failed';
+      let errorMessage = err.message || 'Failed to sign in';
+      
+      if (err.code === 'auth/user-not-found') {
+        errorTitle = 'Account Not Found';
+        errorMessage = 'No account found with this email address. Please check your email or sign up.';
+      } else if (err.code === 'auth/wrong-password') {
+        errorTitle = 'Incorrect Password';
+        errorMessage = 'The password you entered is incorrect. Please try again.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorTitle = 'Invalid Email';
+        errorMessage = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorTitle = 'Too Many Attempts';
+        errorMessage = 'Too many failed sign-in attempts. Please try again later.';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorTitle = 'Network Error';
+        errorMessage = 'Please check your internet connection and try again.';
+      }
+      
+      showError(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }

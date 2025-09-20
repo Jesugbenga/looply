@@ -14,6 +14,7 @@ export interface UserProfile {
   totalRides?: number;
   recentLoadCount?: number; // For load balancing
   lastLoadReset?: string; // Timestamp for load count reset
+  oneSignalUserId?: string; // For push notifications
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +42,7 @@ export interface DriverProfile {
   rating?: number; // Driver rating (1-5)
   recentLoadCount?: number; // For load balancing
   lastLoadReset?: string; // Timestamp for load count reset
+  oneSignalUserId?: string; // For push notifications
   createdAt: string;
   updatedAt: string;
 }
@@ -106,4 +108,57 @@ export interface RideFallbackDrivers {
     driverName: string;
   }>;
   createdAt: string;
+}
+
+// Messaging System Types
+export interface Message {
+  id: string;
+  rideId: string;
+  senderId: string;
+  senderName: string;
+  senderType: 'rider' | 'driver';
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+  messageType: 'text' | 'system' | 'location' | 'status_update';
+  metadata?: {
+    location?: {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+    status?: string;
+    [key: string]: any;
+  };
+}
+
+export interface ChatRoom {
+  id: string;
+  rideId: string;
+  riderId: string;
+  driverId: string;
+  riderName: string;
+  driverName: string;
+  lastMessage?: {
+    content: string;
+    timestamp: string;
+    senderId: string;
+  };
+  unreadCount: {
+    rider: number;
+    driver: number;
+  };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageNotification {
+  id: string;
+  rideId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
 }

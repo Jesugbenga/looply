@@ -13,7 +13,9 @@ import { db } from './firebase';
 import { Ride, DriverProfile, DriverRideRequest, RideFallbackDrivers } from './types';
 import { rideUtils } from './rideUtils';
 import { driverUtils } from './driverUtils';
+import { messagingService } from './messagingService';
 import { matchingUtils } from './matchingUtils';
+import { notificationService } from './notificationService';
 
 export const rideMatchingService = {
   // Create ride request with sequential driver matching
@@ -257,11 +259,29 @@ export const rideMatchingService = {
       
       const rideData = rideDoc.data() as Ride;
       
+      // Get driver profile to get driver name
+      const driverProfile = await driverUtils.getDriverProfile(driverId);
+      if (!driverProfile) {
+        throw new Error('Driver profile not found');
+      }
+
+      // Get user profile to get driver name
+      const { userUtils } = await import('./userUtils');
+      const userProfile = await userUtils.getUserProfile(driverProfile.userId);
+      if (!userProfile) {
+        throw new Error('User profile not found');
+      }
+
+      const driverName = `${userProfile.firstName} ${userProfile.lastName}`;
+
       // Update ride status to matched
+      console.log(`🔄 [RIDE MATCHING] Updating ride ${rideId} to matched status with driver ${driverId} (${driverName})`);
       await rideUtils.updateRideStatus(rideId, 'matched', {
         driverId,
+        driverName,
         matchedAt: new Date().toISOString(),
       });
+      console.log(`✅ [RIDE MATCHING] Successfully updated ride ${rideId} to matched status`);
       
       // Update driver availability and seats
       await driverUtils.updateDriverSeats(driverId, rideData.passengers);
@@ -272,6 +292,34 @@ export const rideMatchingService = {
       
       // Update driver load count for fairness
       await matchingUtils.updateDriverLoadCount(driverId);
+      
+      // Create chat room for communication
+      try {
+        await messagingService.createChatRoom(rideId, rideData.riderId, driverId);
+        console.log('✅ Chat room created for ride:', rideId);
+      } catch (chatError) {
+        console.warn('Failed to create chat room:', chatError);
+        // Don't fail the ride acceptance if chat creation fails
+      }
+      
+      // Send notification to the rider that their ride was accepted
+      try {
+        await notificationService.sendNotificationToUser(
+          rideData.riderId,
+          'Ride Accepted!',
+          `${driverName} will contact you soon`,
+          {
+            type: 'ride_accepted',
+            rideId: rideId,
+            driverId: driverId,
+            driverName: driverName,
+            action: 'view_ride'
+          }
+        );
+      } catch (notificationError) {
+        console.warn('Failed to send notification to rider:', notificationError);
+        // Don't fail the ride acceptance if notification fails
+      }
       
       console.log(`🎉 Driver ${driverId} successfully accepted ride ${rideId}`);
     } catch (error) {

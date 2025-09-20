@@ -10,6 +10,7 @@ export { driverUtils } from './driverUtils';
 export { rideUtils } from './rideUtils';
 export { matchingUtils } from './matchingUtils';
 export { rideMatchingService } from './rideMatchingService';
+export { messagingService } from './messagingService';
 export { geocodingService } from './geocodingService';
 export { eventUtils } from './eventUtils';
 export { utils } from './utils';

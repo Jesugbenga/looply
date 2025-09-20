@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Theme.spacing.md,
-    paddingLeft: Theme.spacing['3xl'],
+    paddingLeft: Theme.spacing['sm'],
   },
   locationIconContainer: {
     width: 28,
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.status.success,
   },
   rideLocation: {
-    fontSize: Theme.typography.fontSize.base,
+    fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.text.primary,
     flex: 1,
   },

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRefresh } from '@/contexts/RefreshContext';
 import { userUtils, rideUtils, rideMatchingService, SavedAddress } from '@/lib/firebaseUtils';
+import { notificationService } from '@/lib/notificationService';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { Theme } from '@/constants/Theme';
 
@@ -160,24 +161,38 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
       // Close modal
       onClose();
       
-      // Show success message based on matching result
+      // Send notifications based on matching result
       if (result.status === 'matched') {
-        Alert.alert(
-          'Ride Matched!',
+        await notificationService.sendNotificationToUser(
+          user.uid,
+          'Ride Matched! 🎉',
           'Great! We found a driver for your ride. Check your activity for details.',
-          [{ text: 'OK' }]
+          {
+            type: 'ride_matched',
+            rideId: result.rideId,
+            action: 'view_ride'
+          }
         );
       } else if (result.status === 'no_match') {
-        Alert.alert(
+        await notificationService.sendNotificationToUser(
+          user.uid,
           'No Drivers Available',
           'Sorry, we couldn\'t find any available drivers in your area right now. Please try again later.',
-          [{ text: 'OK' }]
+          {
+            type: 'system_alert',
+            action: 'try_again'
+          }
         );
       } else {
-        Alert.alert(
+        await notificationService.sendNotificationToUser(
+          user.uid,
           'Ride Requested!',
           'We\'re looking for a driver for your ride. You\'ll be notified when we find one.',
-          [{ text: 'OK' }]
+          {
+            type: 'ride_request',
+            rideId: result.rideId,
+            action: 'view_ride'
+          }
         );
       }
 
@@ -185,7 +200,15 @@ export default function RideBookingModal({ visible, onClose }: RideBookingModalP
       triggerRefresh();
     } catch (error: any) {
       console.error('Error requesting ride:', error);
-      Alert.alert('Error', error.message || 'Failed to request ride. Please try again.');
+      await notificationService.sendNotificationToUser(
+        user.uid,
+        'Ride Request Failed',
+        error.message || 'Failed to request ride. Please try again.',
+        {
+          type: 'system_alert',
+          action: 'try_again'
+        }
+      );
     } finally {
       setLoading(false);
     }

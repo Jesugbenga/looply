@@ -9,6 +9,9 @@ import React, { useEffect } from 'react';
 import { loadStoredAuth } from '@/store/authSlice';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { RefreshProvider } from '@/contexts/RefreshContext';
+import { OneSignalProvider } from '@/contexts/OneSignalContext';
+import { AlertProvider } from '@/contexts/AlertContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function RootLayout() {
@@ -34,14 +37,20 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RefreshProvider>
-        <Provider store={store}>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Slot />
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </Provider>
-      </RefreshProvider>
+      <OneSignalProvider>
+        <RefreshProvider>
+          <AlertProvider>
+            <NotificationProvider>
+              <Provider store={store}>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Slot />
+                  <StatusBar style="auto" />
+                </ThemeProvider>
+              </Provider>
+            </NotificationProvider>
+          </AlertProvider>
+        </RefreshProvider>
+      </OneSignalProvider>
     </AuthProvider>
   );
 }
