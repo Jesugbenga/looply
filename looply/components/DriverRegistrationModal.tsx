@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { driverUtils, DriverProfile, userUtils } from '@/lib/firebaseUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import AddAddressModal from './AddAddressModal';
+import { Theme } from '@/constants/Theme';
 
 interface DriverRegistrationModalProps {
   visible: boolean;
@@ -165,7 +166,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#374151" />
+            <Ionicons name="close" size={24} color={Theme.colors.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.title}>Become a Driver</Text>
           <View style={styles.placeholder} />
@@ -185,6 +186,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
               <TextInput
                 style={styles.input}
                 placeholder="Enter your phone number"
+                placeholderTextColor={Theme.colors.text.tertiary}
                 value={formData.phone}
                 onChangeText={(text) => handleInputChange('phone', text)}
                 keyboardType="phone-pad"
@@ -201,14 +203,14 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
             
             {hasAddress ? (
               <View style={styles.addressStatus}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={20} color={Theme.colors.status.success} />
                 <Text style={styles.addressStatusText}>
                   You have saved addresses. Your default address will be used as your driver location.
                 </Text>
               </View>
             ) : (
               <View style={styles.addressPrompt}>
-                <Ionicons name="location-outline" size={20} color="#6B7280" />
+                <Ionicons name="location-outline" size={20} color={Theme.colors.text.tertiary} />
                 <Text style={styles.addressPromptText}>
                   You need to add an address to set your driver location.
                 </Text>
@@ -231,6 +233,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
               <TextInput
                 style={styles.input}
                 placeholder="Enter your license number"
+                placeholderTextColor={Theme.colors.text.tertiary}
                 value={formData.licenseNumber}
                 onChangeText={(text) => handleInputChange('licenseNumber', text)}
                 autoCapitalize="characters"
@@ -243,6 +246,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
               <TextInput
                 style={styles.input}
                 placeholder="YYYY-MM-DD"
+                placeholderTextColor={Theme.colors.text.tertiary}
                 value={formData.licenseExpiry}
                 onChangeText={(text) => handleInputChange('licenseExpiry', text)}
               />
@@ -259,6 +263,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., Toyota"
+                  placeholderTextColor={Theme.colors.text.tertiary}
                   value={formData.vehicleMake}
                   onChangeText={(text) => handleInputChange('vehicleMake', text)}
                 />
@@ -269,6 +274,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., Camry"
+                  placeholderTextColor={Theme.colors.text.tertiary}
                   value={formData.vehicleModel}
                   onChangeText={(text) => handleInputChange('vehicleModel', text)}
                 />
@@ -281,6 +287,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., 2020"
+                  placeholderTextColor={Theme.colors.text.tertiary}
                   value={formData.vehicleYear}
                   onChangeText={(text) => handleInputChange('vehicleYear', text)}
                   keyboardType="numeric"
@@ -292,6 +299,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., White"
+                  placeholderTextColor={Theme.colors.text.tertiary}
                   value={formData.vehicleColor}
                   onChangeText={(text) => handleInputChange('vehicleColor', text)}
                 />
@@ -303,6 +311,7 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
               <TextInput
                 style={styles.input}
                 placeholder="e.g., ABC123"
+                placeholderTextColor={Theme.colors.text.tertiary}
                 value={formData.licensePlate}
                 onChangeText={(text) => handleInputChange('licensePlate', text)}
                 autoCapitalize="characters"
@@ -386,181 +395,186 @@ export default function DriverRegistrationModal({ visible, onClose, onSuccess }:
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Theme.colors.dark.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: Theme.colors.dark.border,
   },
   closeButton: {
-    padding: 4,
+    padding: Theme.spacing.xs,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: Theme.typography.fontSize.lg,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+    color: Theme.colors.text.primary,
   },
   placeholder: {
     width: 32,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: Theme.spacing.xl,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.base,
+    fontFamily: Theme.typography.fontFamily.regular,
+    color: Theme.colors.text.secondary,
     textAlign: 'center',
-    marginVertical: 20,
-    lineHeight: 24,
+    marginVertical: Theme.spacing.xl,
+    lineHeight: Theme.typography.lineHeight.relaxed * Theme.typography.fontSize.base,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: Theme.spacing['2xl'],
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
+    fontSize: Theme.typography.fontSize.lg,
+    fontFamily: Theme.typography.fontFamily.semiBold,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.lg,
   },
   sectionDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 16,
-    lineHeight: 20,
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
+    color: Theme.colors.text.secondary,
+    marginBottom: Theme.spacing.lg,
+    lineHeight: Theme.typography.lineHeight.normal * Theme.typography.fontSize.sm,
   },
   addressStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: Theme.colors.status.success + '20',
+    padding: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: Theme.colors.status.success + '40',
   },
   addressStatusText: {
-    fontSize: 14,
-    color: '#166534',
-    marginLeft: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
+    color: Theme.colors.status.success,
+    marginLeft: Theme.spacing.sm,
     flex: 1,
   },
   addressPrompt: {
-    backgroundColor: '#F9FAFB',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    padding: Theme.spacing.lg,
+    borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Theme.colors.dark.border,
     alignItems: 'center',
   },
   addressPromptText: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
+    color: Theme.colors.text.secondary,
     textAlign: 'center',
-    marginVertical: 8,
+    marginVertical: Theme.spacing.sm,
   },
   addAddressButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginTop: 8,
+    backgroundColor: Theme.colors.primary[500],
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius.sm,
+    marginTop: Theme.spacing.sm,
   },
   addAddressButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
+    color: Theme.colors.text.inverse,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: Theme.spacing.lg,
   },
   halfWidth: {
     flex: 1,
-    marginRight: 8,
+    marginRight: Theme.spacing.sm,
   },
   row: {
     flexDirection: 'row',
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
+    color: Theme.colors.text.primary,
+    marginBottom: Theme.spacing.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    borderColor: Theme.colors.dark.border,
+    borderRadius: Theme.borderRadius.md,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
+    fontSize: Theme.typography.fontSize.base,
+    fontFamily: Theme.typography.fontFamily.regular,
+    color: Theme.colors.text.primary,
+    backgroundColor: Theme.colors.dark.surface,
   },
   vehicleTypeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   vehicleTypeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius['2xl'],
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: Theme.colors.dark.border,
+    backgroundColor: Theme.colors.dark.surface,
   },
   vehicleTypeButtonActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: Theme.colors.primary[500],
+    borderColor: Theme.colors.primary[500],
   },
   vehicleTypeText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: Theme.typography.fontSize.sm,
+    fontFamily: Theme.typography.fontFamily.medium,
+    color: Theme.colors.text.primary,
   },
   vehicleTypeTextActive: {
-    color: '#FFFFFF',
+    color: Theme.colors.text.inverse,
   },
   footer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    gap: 12,
+    borderTopColor: Theme.colors.dark.border,
+    gap: Theme.spacing.md,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Theme.colors.dark.border,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: Theme.typography.fontSize.base,
+    fontFamily: Theme.typography.fontFamily.medium,
+    color: Theme.colors.text.primary,
   },
   submitButton: {
     flex: 2,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#3B82F6',
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Theme.colors.primary[500],
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: Theme.colors.text.disabled,
   },
   submitButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontSize: Theme.typography.fontSize.base,
+    fontFamily: Theme.typography.fontFamily.medium,
+    color: Theme.colors.text.inverse,
   },
 });
