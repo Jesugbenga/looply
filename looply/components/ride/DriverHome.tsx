@@ -93,7 +93,8 @@ export default function DriverHome() {
         onAction: async () => {
           try {
             // Use the new ride matching service to accept the ride
-            await rideMatchingService.driverAcceptRide(driverProfile.id, rideRequest.rideId);
+            // Pass user ID, not driver profile ID
+            await rideMatchingService.driverAcceptRide(driverProfile.userId, rideRequest.rideId);
             await loadDriverRideRequests(); // Refresh the list
           } catch (error) {
             console.error('Error accepting ride:', error);

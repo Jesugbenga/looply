@@ -114,6 +114,7 @@ export interface RideFallbackDrivers {
 export interface Message {
   id: string;
   rideId: string;
+  chatRoomId: string;
   senderId: string;
   senderName: string;
   senderType: 'rider' | 'driver';

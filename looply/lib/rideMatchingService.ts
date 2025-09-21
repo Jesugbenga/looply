@@ -277,7 +277,7 @@ export const rideMatchingService = {
       // Update ride status to matched
       console.log(`🔄 [RIDE MATCHING] Updating ride ${rideId} to matched status with driver ${driverId} (${driverName})`);
       await rideUtils.updateRideStatus(rideId, 'matched', {
-        driverId,
+        driverId: driverProfile.id, // Store driver profile ID, not user ID
         driverName,
         matchedAt: new Date().toISOString(),
       });
@@ -285,10 +285,10 @@ export const rideMatchingService = {
       
       // Update driver availability and seats
       await driverUtils.updateDriverSeats(driverId, rideData.passengers);
-      await driverUtils.updateDriverAvailability(driverId, false);
+      await driverUtils.updateDriverAvailability(driverId, true);
       
       // Remove the ride request from driver's interface
-      await this.removeDriverRideRequest(driverId, rideId);
+      await this.removeDriverRideRequest(driverProfile.id, rideId);
       
       // Update driver load count for fairness
       await matchingUtils.updateDriverLoadCount(driverId);

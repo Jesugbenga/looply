@@ -98,6 +98,7 @@ export const messagingService = {
       // Create message
       const messageData: Omit<Message, 'id'> = {
         rideId: chatRoom.rideId,
+        chatRoomId: chatRoomId,
         senderId,
         senderName,
         senderType,
@@ -162,6 +163,7 @@ export const messagingService = {
 
       const messageData: Omit<Message, 'id'> = {
         rideId: chatRoom.rideId,
+        chatRoomId: chatRoomId,
         senderId: 'system',
         senderName: 'System',
         senderType: 'rider', // System messages are treated as rider type for display
@@ -188,9 +190,7 @@ export const messagingService = {
       const messagesCollection = collection(db, 'messages');
       const q = query(
         messagesCollection,
-        where('rideId', '==', chatRoomId),
-        orderBy('timestamp', 'desc'),
-        limit(limitCount)
+        where('chatRoomId', '==', chatRoomId)
       );
 
       const querySnapshot = await getDocs(q);
@@ -200,8 +200,11 @@ export const messagingService = {
         messages.push({ id: doc.id, ...doc.data() } as Message);
       });
 
-      // Return messages in chronological order (oldest first)
-      return messages.reverse();
+      // Sort by timestamp in memory to avoid index requirement
+      messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      // Return last N messages
+      return messages.slice(-limitCount);
     } catch (error) {
       console.error('Error getting messages:', error);
       throw error;
@@ -217,9 +220,7 @@ export const messagingService = {
     const messagesCollection = collection(db, 'messages');
     const q = query(
       messagesCollection,
-      where('rideId', '==', chatRoomId),
-      orderBy('timestamp', 'desc'),
-      limit(limitCount)
+      where('chatRoomId', '==', chatRoomId)
     );
 
     return onSnapshot(q, (querySnapshot) => {
@@ -228,8 +229,11 @@ export const messagingService = {
         messages.push({ id: doc.id, ...doc.data() } as Message);
       });
       
-      // Return messages in chronological order (oldest first)
-      callback(messages.reverse());
+      // Sort by timestamp in memory to avoid index requirement
+      messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      
+      // Return last N messages
+      callback(messages.slice(-limitCount));
     }, (error) => {
       console.error('Error listening to messages:', error);
     });
@@ -276,15 +280,18 @@ export const messagingService = {
       const messagesCollection = collection(db, 'messages');
       const q = query(
         messagesCollection,
-        where('rideId', '==', chatRoomId),
-        where('senderId', '!=', userId),
-        where('isRead', '==', false)
+        where('chatRoomId', '==', chatRoomId)
       );
 
       const querySnapshot = await getDocs(q);
-      const updatePromises = querySnapshot.docs.map(doc => 
-        updateDoc(doc.ref, { isRead: true })
-      );
+      
+      // Filter and update in memory to avoid complex query
+      const updatePromises = querySnapshot.docs
+        .filter(doc => {
+          const data = doc.data();
+          return data.senderId !== userId && data.isRead === false;
+        })
+        .map(doc => updateDoc(doc.ref, { isRead: true }));
 
       await Promise.all(updatePromises);
 
@@ -292,7 +299,18 @@ export const messagingService = {
       const chatRoomDoc = await getDoc(doc(db, 'chatRooms', chatRoomId));
       if (chatRoomDoc.exists()) {
         const chatRoom = chatRoomDoc.data() as ChatRoom;
-        const field = chatRoom.riderId === userId ? 'rider' : 'driver';
+        
+        // Determine if user is rider or driver
+        let field = 'rider'; // Default to rider
+        if (chatRoom.riderId === userId) {
+          field = 'rider';
+        } else {
+          // For drivers, we need to check if the user ID matches the driver's user ID
+          const driverProfile = await driverUtils.getDriverProfile(userId);
+          if (driverProfile && chatRoom.driverId === driverProfile.id) {
+            field = 'driver';
+          }
+        }
         
         await updateDoc(doc(db, 'chatRooms', chatRoomId), {
           [`unreadCount.${field}`]: 0,
