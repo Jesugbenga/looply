@@ -66,6 +66,20 @@ export const rideUtils = {
     }
   },
 
+  // Get a ride by ID
+  async getRideById(rideId: string): Promise<Ride | null> {
+    try {
+      const rideDoc = await getDoc(doc(db, 'rides', rideId));
+      if (rideDoc.exists()) {
+        return { id: rideDoc.id, ...rideDoc.data() } as Ride;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting ride by ID:', error);
+      throw error;
+    }
+  },
+
   // Get pending rides for drivers
   async getPendingRides(): Promise<Ride[]> {
     try {

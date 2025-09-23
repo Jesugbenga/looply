@@ -15,8 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { messagingService } from '@/lib/messagingService';
-import { Message } from '@/lib/types';
+import { Message, Ride } from '@/lib/types';
 import { Theme } from '@/constants/Theme';
+import { rideUtils } from '@/lib/rideUtils';
 
 export default function ChatScreen() {
   const { user, userProfile } = useAuth();
@@ -28,12 +29,15 @@ export default function ChatScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [ride, setRide] = useState<Ride | null>(null);
+  const [isRideCompleted, setIsRideCompleted] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     if (chatRoomId && user && userProfile) {
       loadMessages();
       markMessagesAsRead();
+      loadRideDetails();
       
       // Set up real-time message subscription
       const unsubscribe = messagingService.subscribeToMessages(
@@ -52,6 +56,20 @@ export default function ChatScreen() {
       };
     }
   }, [chatRoomId, user, userProfile]);
+
+  const loadRideDetails = async () => {
+    if (!rideId) return;
+    
+    try {
+      const rideData = await rideUtils.getRideById(rideId as string);
+      if (rideData) {
+        setRide(rideData);
+        setIsRideCompleted(rideData.status === 'completed');
+      }
+    } catch (error) {
+      console.error('Error loading ride details:', error);
+    }
+  };
 
   const loadMessages = async () => {
     if (!chatRoomId) return;
@@ -79,7 +97,7 @@ export default function ChatScreen() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !chatRoomId || !user || !userProfile || sending) return;
+    if (!newMessage.trim() || !chatRoomId || !user || !userProfile || sending || isRideCompleted) return;
 
     const messageContent = newMessage.trim();
     setNewMessage('');
@@ -145,9 +163,14 @@ export default function ChatScreen() {
         size={60} 
         color={Theme.colors.text.tertiary} 
       />
-      <Text style={styles.emptyStateText}>Start a conversation</Text>
+      <Text style={styles.emptyStateText}>
+        {isRideCompleted ? 'Ride Completed' : 'Start a conversation'}
+      </Text>
       <Text style={styles.emptyStateSubtext}>
-        Send a message to coordinate your ride
+        {isRideCompleted 
+          ? 'This ride has been completed. Chat is no longer available.' 
+          : 'Send a message to coordinate your ride'
+        }
       </Text>
     </View>
   );
@@ -156,7 +179,7 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/messages')}>
             <Ionicons name="arrow-back" size={24} color={Theme.colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{otherUserName}</Text>
@@ -172,7 +195,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/messages')}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{otherUserName}</Text>
@@ -196,29 +219,44 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            placeholder="Type a message..."
-            placeholderTextColor={Theme.colors.text.tertiary}
-            multiline
-            maxLength={500}
-            editable={!sending}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
-            onPress={sendMessage}
-            disabled={!newMessage.trim() || sending}
-          >
-            <Ionicons 
-              name={sending ? "hourglass-outline" : "send"} 
-              size={20} 
-              color={(!newMessage.trim() || sending) ? Theme.colors.text.tertiary : '#FFFFFF'} 
+        {!isRideCompleted && (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Type a message..."
+              placeholderTextColor={Theme.colors.text.tertiary}
+              multiline
+              maxLength={500}
+              editable={!sending}
             />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
+              onPress={sendMessage}
+              disabled={!newMessage.trim() || sending}
+            >
+              <Ionicons 
+                name={sending ? "hourglass-outline" : "send"} 
+                size={20} 
+                color={(!newMessage.trim() || sending) ? Theme.colors.text.tertiary : '#FFFFFF'} 
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        {isRideCompleted && (
+          <View style={styles.completedContainer}>
+            <Ionicons 
+              name="checkmark-circle" 
+              size={24} 
+              color={Theme.colors.primary[500]} 
+            />
+            <Text style={styles.completedText}>
+              This ride has been completed. Chat is no longer available.
+            </Text>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -364,5 +402,22 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Theme.colors.dark.border,
+  },
+  completedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.md,
+    backgroundColor: Theme.colors.dark.surfaceVariant,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.dark.border,
+  },
+  completedText: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.text.secondary,
+    marginLeft: Theme.spacing.sm,
+    textAlign: 'center',
+    flex: 1,
   },
 });
