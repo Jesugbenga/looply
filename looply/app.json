@@ -1,19 +1,38 @@
 {
   "expo": {
-    "name": "looply",
-    "slug": "looply",
+    "name": "Muuv",
+    "slug": "muuv",
+    "owner": "jesugbenga",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "looply",
+    "scheme": "muuv",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Smart ride sharing platform connecting riders and drivers for events, campus transportation, and everyday journeys.",
+    "keywords": [
+      "ride sharing",
+      "transportation",
+      "events",
+      "campus",
+      "carpool",
+      "driver",
+      "rider"
+    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.looply",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.muuv.app",
+      "buildNumber": "1",
       "config": {
         "googleMapsApiKey": "AIzaSyDYvNDB2hvmg8zoFBRRKXIMQC4DSjE39o4"
-      }
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Muuv needs location access to find nearby drivers and provide accurate ride matching.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Muuv needs location access to provide real-time ride tracking and driver matching.",
+        "NSCameraUsageDescription": "Muuv may need camera access for profile photos and verification.",
+        "NSMicrophoneUsageDescription": "Muuv may need microphone access for voice messages in chat."
+      },
+      "usesGoogleMaps": true
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +40,16 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.looply",
+      "package": "com.muuv.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "config": {
         "googleMapsApiKey": "AIzaSyDYvNDB2hvmg8zoFBRRKXIMQC4DSjE39o4"
       }
@@ -56,6 +84,21 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "EXPO_PUBLIC_GEOAPIFY_API_KEY": "a062552d381947d696ad9f10bf269368",
+      "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDqarQzaIGhTfysZusUdUswsUvg4j_9rhQ",
+      "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "looply-3d198.firebaseapp.com",
+      "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "looply-3d198",
+      "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "looply-3d198.firebasestorage.app",
+      "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "328165437417",
+      "EXPO_PUBLIC_FIREBASE_APP_ID": "1:328165437417:web:9879da84fe79e2209a6578",
+      "oneSignalAppId": "3367ba20-d39e-41e8-b2af-7bfe367e6942",
+      "oneSignalRestApiKey": "os_v2_app_gnt3uigttza6rmvppp7dm7tjilr6stow2spuaunyndaxjf2of6ye2rdm3wahnxeic5oobnoxbbrkyg3xfghkuufubvtpzvi5owxokoi",
+      "router": {},
+      "eas": {
+        "projectId": "4201e2d2-43a8-4e4e-b9e5-79568546bad3"
+      }
     }
   }
 }

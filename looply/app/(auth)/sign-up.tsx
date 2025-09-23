@@ -72,8 +72,8 @@ export default function SignUpScreen() {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>Join us and start your journey</Text>
+            <Text style={styles.title}>Join Muuv</Text>
+            <Text style={styles.subtitle}>Create your account and start your journey</Text>
           </View>
 
           {/* Form */}
@@ -171,7 +171,7 @@ export default function SignUpScreen() {
               disabled={loading || !emailAddress || !password || !firstName || !lastName}
             >
               <Text style={styles.signUpButtonText}>
-                {loading ? 'Creating account...' : 'Create Account'}
+                {loading ? 'Creating account...' : 'Join Muuv'}
               </Text>
             </TouchableOpacity>
 

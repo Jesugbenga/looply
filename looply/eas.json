@@ -1,0 +1,44 @@
+{
+  "cli": {
+    "version": ">= 5.9.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NPM_CONFIG_CACHE": "/tmp/.npm"
+      },
+      "cache": {
+        "disabled": false
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+        "ios": {
+            "appleId": "jesuomo69@gmail.com",
+            "ascAppId": "6752886548",
+            "appleTeamId": "25H6GX8A78"
+        }
+    }
+  }
+}

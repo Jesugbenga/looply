@@ -1,7 +1,9 @@
 {
-  "name": "looply",
+  "name": "muuv",
+  "displayName": "Muuv",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "description": "Smart ride sharing platform connecting riders and drivers for events, campus transportation, and everyday journeys.",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",

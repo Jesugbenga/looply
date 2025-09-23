@@ -85,7 +85,7 @@ export default function SignInScreen() {
           {/* Title Section */}
           <View style={styles.titleSection}>
             <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+            <Text style={styles.subtitle}>Sign in to continue your Muuv journey</Text>
           </View>
 
           {/* Form */}
@@ -148,7 +148,7 @@ export default function SignInScreen() {
               disabled={loading || !emailAddress || !password}
             >
               <Text style={styles.signInButtonText}>
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign in to Muuv'}
               </Text>
             </TouchableOpacity>
 
