@@ -28,7 +28,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Muuv needs location access to provide real-time ride tracking and driver matching.",
         "NSCameraUsageDescription": "Muuv may need camera access for profile photos and verification.",
         "NSMicrophoneUsageDescription": "Muuv may need microphone access for voice messages in chat."
-      },
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,7 +45,7 @@
         "RECORD_AUDIO",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
-      ],
+      ]
     },
     "web": {
       "bundler": "metro",
