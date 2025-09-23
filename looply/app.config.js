@@ -31,7 +31,6 @@ module.exports = () => ({
   // ----- APP STORE REQUIREMENTS -----
   ios: {
     ...appJson.expo.ios,
-    usesGoogleMaps: true,
     infoPlist: {
       ...appJson.expo.ios?.infoPlist,
       ITSAppUsesNonExemptEncryption: false

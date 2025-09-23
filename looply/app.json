@@ -23,16 +23,12 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.muuv.app",
       "buildNumber": "1",
-      "config": {
-        "googleMapsApiKey": "AIzaSyDYvNDB2hvmg8zoFBRRKXIMQC4DSjE39o4"
-      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Muuv needs location access to find nearby drivers and provide accurate ride matching.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Muuv needs location access to provide real-time ride tracking and driver matching.",
         "NSCameraUsageDescription": "Muuv may need camera access for profile photos and verification.",
         "NSMicrophoneUsageDescription": "Muuv may need microphone access for voice messages in chat."
       },
-      "usesGoogleMaps": true
     },
     "android": {
       "adaptiveIcon": {
@@ -50,9 +46,6 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ],
-      "config": {
-        "googleMapsApiKey": "AIzaSyDYvNDB2hvmg8zoFBRRKXIMQC4DSjE39o4"
-      }
     },
     "web": {
       "bundler": "metro",
