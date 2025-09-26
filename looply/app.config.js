@@ -8,6 +8,7 @@ module.exports = () => ({
   // ----- REQUIRED FIELDS -----
   owner: 'jesugbenga',
   slug: 'muuv',
+  scheme: 'com.muuv.app',
   name: 'Muuv',
   version: '1.0.0',
   description: 'Smart ride sharing platform connecting riders and drivers for events, campus transportation, and everyday journeys.',
@@ -79,6 +80,7 @@ module.exports = () => ({
   ios: {
     bundleIdentifier: 'com.muuv.app',
     buildNumber: '1',
+    deploymentTarget: '18.0',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false
     }
