@@ -56,7 +56,7 @@ module.exports = () => ({
   },
   
   // ----- NEW ARCHITECTURE -----
-  newArchEnabled: false,
+  newArchEnabled: true,
   
   // ----- EXTRA CONFIG -----
   extra: {
