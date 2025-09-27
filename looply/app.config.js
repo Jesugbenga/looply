@@ -33,6 +33,8 @@ module.exports = () => ({
       {
         ios: {
           useFrameworks: 'static',
+          forceStaticLinking: ["RNFBApp", "RNFBAuth", "RNFBFirestore"],
+          buildReactNativeFromSource: true,
           otherCFlags: [
             '-D_LIBCPP_ENABLE_CXX20_REMOVED_FEATURES',
             '-Wno-error=unused-command-line-argument',
@@ -76,11 +78,26 @@ module.exports = () => ({
     }
   },
   
+  // ----- ICON CONFIG -----
+  icon: './assets/images/icon.png',
+  adaptiveIcon: {
+    foregroundImage: './assets/images/adaptive-icon.png',
+    backgroundColor: '#222222'
+  },
+  
+  // ----- SPLASH SCREEN CONFIG -----
+  splash: {
+    image: './assets/images/splash-icon.png',
+    resizeMode: 'contain',
+    backgroundColor: '#222222'
+  },
+  
   // ----- IOS CONFIG -----
   ios: {
     bundleIdentifier: 'com.muuv.app',
     buildNumber: '1',
     deploymentTarget: '18.0',
+    icon: './assets/images/icon.png',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false
     }
@@ -89,7 +106,12 @@ module.exports = () => ({
   // ----- ANDROID CONFIG -----
   android: {
     package: 'com.muuv.app',
-    versionCode: 1
+    versionCode: 1,
+    icon: './assets/images/icon.png',
+    adaptiveIcon: {
+      foregroundImage: './assets/images/adaptive-icon.png',
+      backgroundColor: '#222222'
+    }
   },
   
   // ----- WEB CONFIG -----
