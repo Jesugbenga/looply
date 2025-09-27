@@ -19,5 +19,9 @@
         <key>com.muuv.app</key>
         <string>Your_App_Store_Provisioning_Profile</string>
     </dict>
+    <key>CFBundleVersion</key>
+    <string>2</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.1</string>
 </dict>
 </plist>

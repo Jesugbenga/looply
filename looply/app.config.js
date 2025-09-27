@@ -10,7 +10,7 @@ module.exports = () => ({
   slug: 'muuv',
   scheme: 'com.muuv.app',
   name: 'Muuv',
-  version: '1.0.0',
+  version: '1.0.1',
   description: 'Smart ride sharing platform connecting riders and drivers for events, campus transportation, and everyday journeys.',
   
   // ----- PLUGINS -----
@@ -95,11 +95,15 @@ module.exports = () => ({
   // ----- IOS CONFIG -----
   ios: {
     bundleIdentifier: 'com.muuv.app',
-    buildNumber: '1',
+    buildNumber: '2',
     deploymentTarget: '18.0',
     icon: './assets/images/icon.png',
     infoPlist: {
-      ITSAppUsesNonExemptEncryption: false
+      ITSAppUsesNonExemptEncryption: false,
+      NSLocationWhenInUseUsageDescription: 'Muuv uses your location to find nearby rides, match you with drivers, and provide accurate pickup and drop-off locations for a seamless ride-sharing experience.',
+      NSLocationAlwaysAndWhenInUseUsageDescription: 'Muuv uses your location to find nearby rides, match you with drivers, and provide accurate pickup and drop-off locations for a seamless ride-sharing experience.',
+      NSLocationAlwaysUsageDescription: 'Muuv uses your location to find nearby rides, match you with drivers, and provide accurate pickup and drop-off locations for a seamless ride-sharing experience.',
+      NSUserNotificationsUsageDescription: 'Muuv sends you notifications about ride requests, driver updates, and important ride information to keep you informed throughout your journey.'
     }
   },
   
