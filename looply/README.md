@@ -1,50 +1,96 @@
-# Welcome to your Expo app 👋
+<div align="center">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# Muuv
 
-## Get started
+Privacy-first ride sharing app built with Expo + React Native.
 
-1. Install dependencies
+</div>
 
-   ```bash
-   npm install
-   ```
+## Quick Start
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1) Install dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2) Run the app (clears bundler cache)
 
-## Learn more
+```bash
+npx expo start --clear
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Configuration (High-level)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- App configuration lives in `app.config.js`.
+- Firebase config is read in `lib/firebase.ts` from `Constants.expoConfig.extra`.
+- Do not commit secrets in this repo. Use environment variables or your CI secrets store.
 
-## Join the community
+### Firebase
 
-Join our community of developers creating universal apps.
+Required steps in your own Firebase project:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Enable Authentication providers you intend to use (e.g., Google, Email/Password).
+- Add your iOS and Android apps in Firebase settings and download platform files as needed.
+
+### Google Sign-In
+
+In Google Cloud Console (for your project):
+
+- Create an OAuth 2.0 Web client and use its Client ID in `app.config.js` (as `extra.googleWebClientId`).
+- Create an Android client for your package name. Add your own signing certificate fingerprints in your Google/Play console (do not store them in README).
+
+### iOS
+
+- Bundle identifier configured in `app.config.js`.
+- Apple Sign-In is currently disabled in this project template.
+
+## Build & Submit (EAS)
+
+Install EAS CLI and login:
+
+```bash
+npm i -g @expo/eas-cli
+eas login
+eas build:configure
+```
+
+Builds:
+
+```bash
+# Android
+eas build --platform android --profile development
+eas build --platform android --profile production
+
+# iOS
+eas build --platform ios --profile development
+eas build --platform ios --profile production
+```
+
+Submit:
+
+```bash
+eas submit --platform android
+eas submit --platform ios
+```
+
+## Troubleshooting
+
+- Google sign-in configuration errors typically indicate a mismatch between your app identifiers and console configuration. Re-check client IDs and signing configs.
+- If Firebase reports invalid API key, ensure values are correctly supplied via `app.config.js` and are from your Firebase project.
+- Clear caches when configs change:
+
+```bash
+npx expo start --clear
+npx expo run:android --clear-cache
+```
+
+## Slides (Suggested Outline)
+
+- Problem & Opportunity
+- Solution Overview (Muuv)
+- Key Features
+- Demo Flow (Auth → Request → Match → Trip)
+- Architecture (Expo RN, Firebase, Notifications)
+- Security & Privacy
+- Roadmap + Call to Action

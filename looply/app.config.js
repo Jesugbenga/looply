@@ -10,7 +10,7 @@ module.exports = () => ({
   slug: 'muuv',
   scheme: 'com.muuv.app',
   name: 'Muuv',
-  version: '1.0.1',
+  version: '1.0.2',
   description: 'Smart ride sharing platform connecting riders and drivers for events, campus transportation, and everyday journeys.',
   
   // ----- PLUGINS -----
@@ -72,6 +72,7 @@ module.exports = () => ({
     EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:328165437417:web:9879da84fe79e2209a6578',
     oneSignalAppId: process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '3367ba20-d39e-41e8-b2af-7bfe367e6942',
     oneSignalRestApiKey: process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY || 'os_v2_app_gnt3uigttza6rmvppp7dm7tjilr6stow2spuaunyndaxjf2of6ye2rdm3wahnxeic5oobnoxbbrkyg3xfghkuufubvtpzvi5owxokoi',
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '328165437417-cii1nbtgf5sd8qpt4346lleib0fi9jbr.apps.googleusercontent.com',
     router: {},
     eas: {
       projectId: '4201e2d2-43a8-4e4e-b9e5-79568546bad3'
@@ -95,7 +96,7 @@ module.exports = () => ({
   // ----- IOS CONFIG -----
   ios: {
     bundleIdentifier: 'com.muuv.app',
-    buildNumber: '2',
+    buildNumber: '3',
     deploymentTarget: '18.0',
     icon: './assets/images/icon.png',
     infoPlist: {

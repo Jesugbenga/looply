@@ -1,23 +1,23 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeAuth, getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork, doc, getDoc } from 'firebase/firestore';
+import Constants from 'expo-constants';
 
 // Your Firebase configuration
-// You'll need to get this from your Firebase Console
+// Using Constants.expoConfig.extra to get values from app.config.js
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "your_api_key_here",
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "your_project_id.firebaseapp.com",
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "your_project_id_here",
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "your_project_id.appspot.com",
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "your_sender_id_here",
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "your_app_id_here",
+  apiKey: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyDqarQzaIGhTfysZusUdUswsUvg4j_9rhQ",
+  authDomain: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "looply-3d198.firebaseapp.com",
+  projectId: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "looply-3d198",
+  storageBucket: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "looply-3d198.firebasestorage.app",
+  messagingSenderId: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "328165437417",
+  appId: Constants.expoConfig?.extra?.EXPO_PUBLIC_FIREBASE_APP_ID || "1:328165437417:web:9879da84fe79e2209a6578",
 };
 
 // Check if Firebase is properly configured
-if (firebaseConfig.apiKey === "your_api_key_here") {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "your_api_key_here") {
   console.error("🚨 FIREBASE NOT CONFIGURED!");
-  console.error("Please follow the setup guide in FIREBASE_SETUP_GUIDE.md");
-  console.error("Create a .env file with your Firebase configuration");
+  console.error("Please check your app.config.js Firebase configuration");
 } else {
   console.log("✅ Firebase configured successfully");
   console.log("Project ID:", firebaseConfig.projectId);
